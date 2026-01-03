@@ -15,8 +15,8 @@ class APIService {
     // MARK: - Configuration
     
     /// Base URL for your Vercel deployment
-    /// Production URL from Vercel deployment
-    static let baseURL = "https://dollar2rupee-91pkmxcb2-newsapps-projects-60e3aa11.vercel.app"
+    /// Production URL (stable, auto-updates with new deployments)
+    static let baseURL = "https://dollar2rupee-api.vercel.app"
     
     // Endpoints
     private static let ratesEndpoint = "\(baseURL)/api/rates"
@@ -27,11 +27,12 @@ class APIService {
     /**
      Fetch all remittance rates with comprehensive error handling
      - Parameter currency: Source currency code (USD, GBP, EUR, etc.)
+     - Parameter targetCurrency: Target currency code (INR, PHP, MXN, etc.)
      - Parameter completion: Returns Result with array of Rate objects or error message
      */
-    static func fetchRates(currency: String = "USD", completion: @escaping (Result<[Rate]>) -> Void) {
+    static func fetchRates(currency: String = "USD", targetCurrency: String = "INR", completion: @escaping (Result<[Rate]>) -> Void) {
         
-        let endpoint = "\(baseURL)/api/rates?currency=\(currency)"
+        let endpoint = "\(baseURL)/api/rates?currency=\(currency)&target=\(targetCurrency)"
         
         guard let url = URL(string: endpoint) else {
             print("❌ Invalid API URL: \(endpoint)")
@@ -89,20 +90,29 @@ class APIService {
                         for rateJSON in ratesArray {
                             let provider = rateJSON["provider"].stringValue
                             let rate = rateJSON["rate"].doubleValue
+                            let fee = rateJSON["fee"].doubleValue
+                            let markup = rateJSON["markup"].doubleValue
                             let source = rateJSON["source"].stringValue
+                            let deliverySpeed = parseDeliverySpeed(from: rateJSON)
                             
                             if rate > 0 {
                                 let rateObject = Rate(
                                     currency: provider,
                                     rate: rate,
                                     dateString: Date().toString(dateFormat: "dd-MMM-yyyy"),
-                                    forexRate: forexRateString
+                                    forexRate: forexRateString,
+                                    sourceCurrency: currency,
+                                    fee: fee,
+                                    markup: markup,
+                                    deliverySpeed: deliverySpeed
                                 )
                                 rates.append(rateObject)
                                 
                                 // Log individual rates for debugging
                                 let sourceLabel = source == "wise-api" ? "✅ Real" : "📐 Calc"
-                                print("   \(sourceLabel) \(provider): \(rate)")
+                                let feeDisplay = fee == 0.0 ? "Free ⭐" : String(format: "$%.2f", fee)
+                                let speedDisplay = deliverySpeed.isEmpty ? "" : " (\(deliverySpeed))"
+                                print("   \(sourceLabel) \(provider): \(rate) (Fee: \(feeDisplay))\(speedDisplay)")
                             }
                         }
                         
@@ -205,8 +215,8 @@ class APIService {
      - Parameter currency: Source currency code (USD, GBP, EUR, etc.)
      - Parameter completion: Returns Result with array of Rate objects or error
      */
-    static func forceRefreshRates(currency: String = "USD", completion: @escaping (Result<[Rate]>) -> Void) {
-        let refreshURL = "\(baseURL)/api/rates?currency=\(currency)&refresh=true"
+    static func forceRefreshRates(currency: String = "USD", targetCurrency: String = "INR", completion: @escaping (Result<[Rate]>) -> Void) {
+        let refreshURL = "\(baseURL)/api/rates?currency=\(currency)&target=\(targetCurrency)&refresh=true"
         
         guard let url = URL(string: refreshURL) else {
             print("❌ Invalid refresh URL")
@@ -247,13 +257,21 @@ class APIService {
                         for rateJSON in ratesArray {
                             let provider = rateJSON["provider"].stringValue
                             let rate = rateJSON["rate"].doubleValue
+                            let fee = rateJSON["fee"].doubleValue
+                            let markup = rateJSON["markup"].doubleValue
+                            let source = rateJSON["source"].stringValue
+                            let deliverySpeed = parseDeliverySpeed(from: rateJSON)
                             
                             if rate > 0 {
                                 let rateObject = Rate(
                                     currency: provider,
                                     rate: rate,
                                     dateString: Date().toString(dateFormat: "dd-MMM-yyyy"),
-                                    forexRate: forexRateString
+                                    forexRate: forexRateString,
+                                    sourceCurrency: currency,
+                                    fee: fee,
+                                    markup: markup,
+                                    deliverySpeed: deliverySpeed
                                 )
                                 rates.append(rateObject)
                             }
@@ -275,6 +293,49 @@ class APIService {
     }
     
     // MARK: - Helper Methods
+    
+    /**
+     Parse delivery speed from ISO 8601 duration format
+     - Parameter json: The rate JSON object containing deliveryTime
+     - Returns: User-friendly delivery speed string (e.g., "⚡ Instant", "📅 3 days")
+     */
+    private static func parseDeliverySpeed(from json: JSON) -> String {
+        guard json["deliveryTime"]["providerGivesEstimate"].boolValue == true,
+              let durationString = json["deliveryTime"]["duration"]["max"].string ?? json["deliveryTime"]["duration"]["min"].string else {
+            return ""
+        }
+        
+        // Handle ISO 8601 duration format (e.g., "PT1H", "P2D")
+        let cleanedDuration = durationString.replacingOccurrences(of: "P", with: "").replacingOccurrences(of: "T", with: "")
+        
+        if cleanedDuration.contains("H") {
+            if let hoursString = cleanedDuration.replacingOccurrences(of: "H", with: "").components(separatedBy: "M").first,
+               let hours = Int(hoursString) {
+                if hours == 0 {
+                    return "⚡ Instant"
+                } else if hours < 24 {
+                    return "🕐 \(hours) hours"
+                } else {
+                    let days = hours / 24
+                    return "📅 \(days) day\(days > 1 ? "s" : "")"
+                }
+            }
+        } else if cleanedDuration.contains("D") {
+            if let daysString = cleanedDuration.replacingOccurrences(of: "D", with: "").components(separatedBy: "H").first,
+               let days = Int(daysString) {
+                return "📅 \(days) day\(days > 1 ? "s" : "")"
+            }
+        } else if cleanedDuration.contains("M") { // Minutes
+            if let minutesString = cleanedDuration.replacingOccurrences(of: "M", with: "").components(separatedBy: "S").first,
+               let minutes = Int(minutesString), minutes < 60 {
+                return "⚡ Instant"
+            }
+        } else if cleanedDuration.contains("S") { // Seconds
+            return "⚡ Instant"
+        }
+        
+        return ""
+    }
     
     /**
      Test if API is reachable

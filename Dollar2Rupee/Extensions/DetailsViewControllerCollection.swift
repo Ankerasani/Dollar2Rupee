@@ -22,7 +22,7 @@ extension DetailsViewCOntroller: UICollectionViewDelegate, UICollectionViewDataS
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell  = rateCollection.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! DetailsRateCell
-        let rates = remittanceObjects.compactMap({ Rate(currency: $0.currancy ?? "unknown", rate: $0.rate, dateString: $0.dateString ?? "", forexRate: $0.forexRate ?? "")})
+        let rates = remittanceObjects.compactMap({ Rate(currency: $0.currancy ?? "unknown", rate: $0.rate, dateString: $0.dateString ?? "", forexRate: $0.forexRate ?? "", sourceCurrency: $0.sourceCurrency ?? "USD")})
         cell.updateData(rate: rates[indexPath.row], entery: 0)
         return cell
     }

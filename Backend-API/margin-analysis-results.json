@@ -1,0 +1,373 @@
+{
+  "currencies": {
+    "USD": {
+      "forexRate": 90.014,
+      "providers": [
+        {
+          "name": "ofx",
+          "displayName": "OFX",
+          "rate": 87.0187,
+          "margin": -3,
+          "percentage": -3.33,
+          "isMidMarket": false
+        },
+        {
+          "name": "xoom",
+          "displayName": "Xoom",
+          "rate": 89.0716,
+          "margin": -0.94,
+          "percentage": -1.05,
+          "isMidMarket": false
+        },
+        {
+          "name": "moneygram",
+          "displayName": "Moneygram",
+          "rate": 89.6538422392,
+          "margin": -0.36,
+          "percentage": -0.4,
+          "isMidMarket": false
+        },
+        {
+          "name": "remitly",
+          "displayName": "Remitly",
+          "rate": 89.77,
+          "margin": -0.24,
+          "percentage": -0.27,
+          "isMidMarket": false
+        },
+        {
+          "name": "statebank",
+          "displayName": "State Bank of India",
+          "rate": 89.75,
+          "margin": -0.26,
+          "percentage": -0.29,
+          "isMidMarket": false
+        },
+        {
+          "name": "transferwise",
+          "displayName": "Wise",
+          "rate": 90.014,
+          "margin": 0,
+          "percentage": 0,
+          "isMidMarket": true
+        },
+        {
+          "name": "instarem",
+          "displayName": "Instarem",
+          "rate": 89.634,
+          "margin": -0.38,
+          "percentage": -0.42,
+          "isMidMarket": false
+        }
+      ]
+    },
+    "GBP": {
+      "forexRate": 121.159,
+      "providers": [
+        {
+          "name": "westernunion",
+          "displayName": "Western Union",
+          "rate": 120.951255484,
+          "margin": -0.21,
+          "percentage": -0.17,
+          "isMidMarket": false
+        },
+        {
+          "name": "statebank",
+          "displayName": "State Bank of India",
+          "rate": 120.8,
+          "margin": -0.36,
+          "percentage": -0.3,
+          "isMidMarket": false
+        },
+        {
+          "name": "transferwise",
+          "displayName": "Wise",
+          "rate": 121.159,
+          "margin": 0,
+          "percentage": 0,
+          "isMidMarket": true
+        },
+        {
+          "name": "ofx",
+          "displayName": "OFX",
+          "rate": 117.3004,
+          "margin": -3.86,
+          "percentage": -3.18,
+          "isMidMarket": false
+        },
+        {
+          "name": "xoom",
+          "displayName": "Xoom",
+          "rate": 119.9334,
+          "margin": -1.23,
+          "percentage": -1.01,
+          "isMidMarket": false
+        },
+        {
+          "name": "remitly",
+          "displayName": "Remitly",
+          "rate": 120.85,
+          "margin": -0.31,
+          "percentage": -0.26,
+          "isMidMarket": false
+        },
+        {
+          "name": "instarem",
+          "displayName": "Instarem",
+          "rate": 120.9144,
+          "margin": -0.24,
+          "percentage": -0.2,
+          "isMidMarket": false
+        }
+      ]
+    },
+    "EUR": {
+      "forexRate": 105.492,
+      "providers": [
+        {
+          "name": "statebank",
+          "displayName": "State Bank of India",
+          "rate": 105.2,
+          "margin": -0.29,
+          "percentage": -0.28,
+          "isMidMarket": false
+        },
+        {
+          "name": "instarem",
+          "displayName": "Instarem",
+          "rate": 105.3058,
+          "margin": -0.19,
+          "percentage": -0.18,
+          "isMidMarket": false
+        },
+        {
+          "name": "ofx",
+          "displayName": "OFX",
+          "rate": 102.0987,
+          "margin": -3.39,
+          "percentage": -3.22,
+          "isMidMarket": false
+        },
+        {
+          "name": "transferwise",
+          "displayName": "Wise",
+          "rate": 105.492,
+          "margin": 0,
+          "percentage": 0,
+          "isMidMarket": true
+        },
+        {
+          "name": "remitly",
+          "displayName": "Remitly",
+          "rate": 104.73,
+          "margin": -0.76,
+          "percentage": -0.72,
+          "isMidMarket": false
+        },
+        {
+          "name": "xoom",
+          "displayName": "Xoom",
+          "rate": 104.2173,
+          "margin": -1.27,
+          "percentage": -1.21,
+          "isMidMarket": false
+        }
+      ]
+    },
+    "CAD": {
+      "forexRate": 65.5482,
+      "providers": [
+        {
+          "name": "transferwise",
+          "displayName": "Wise",
+          "rate": 65.5482,
+          "margin": 0,
+          "percentage": 0,
+          "isMidMarket": true
+        },
+        {
+          "name": "remitly",
+          "displayName": "Remitly",
+          "rate": 65.2,
+          "margin": -0.35,
+          "percentage": -0.53,
+          "isMidMarket": false
+        },
+        {
+          "name": "instarem",
+          "displayName": "Instarem",
+          "rate": 65.1671,
+          "margin": -0.38,
+          "percentage": -0.58,
+          "isMidMarket": false
+        },
+        {
+          "name": "xoom",
+          "displayName": "Xoom",
+          "rate": 64.7307,
+          "margin": -0.82,
+          "percentage": -1.25,
+          "isMidMarket": false
+        },
+        {
+          "name": "ofx",
+          "displayName": "OFX",
+          "rate": 63.5018,
+          "margin": -2.05,
+          "percentage": -3.12,
+          "isMidMarket": false
+        }
+      ]
+    },
+    "AUD": {
+      "forexRate": 60.2554,
+      "providers": [
+        {
+          "name": "remitly",
+          "displayName": "Remitly",
+          "rate": 59.63,
+          "margin": -0.63,
+          "percentage": -1.04,
+          "isMidMarket": false
+        },
+        {
+          "name": "transferwise",
+          "displayName": "Wise",
+          "rate": 60.2554,
+          "margin": 0,
+          "percentage": 0,
+          "isMidMarket": true
+        },
+        {
+          "name": "instarem",
+          "displayName": "Instarem",
+          "rate": 60.2029,
+          "margin": -0.05,
+          "percentage": -0.09,
+          "isMidMarket": false
+        },
+        {
+          "name": "westernunion",
+          "displayName": "Western Union",
+          "rate": 60.1348965994,
+          "margin": -0.12,
+          "percentage": -0.2,
+          "isMidMarket": false
+        },
+        {
+          "name": "ofx",
+          "displayName": "OFX",
+          "rate": 58.467,
+          "margin": -1.79,
+          "percentage": -2.97,
+          "isMidMarket": false
+        }
+      ]
+    },
+    "SGD": {
+      "forexRate": 69.979,
+      "providers": [
+        {
+          "name": "remitly",
+          "displayName": "Remitly",
+          "rate": 69.09,
+          "margin": -0.89,
+          "percentage": -1.27,
+          "isMidMarket": false
+        },
+        {
+          "name": "instarem",
+          "displayName": "Instarem",
+          "rate": 69.896,
+          "margin": -0.08,
+          "percentage": -0.12,
+          "isMidMarket": false
+        },
+        {
+          "name": "ofx",
+          "displayName": "OFX",
+          "rate": 67.7988,
+          "margin": -2.18,
+          "percentage": -3.12,
+          "isMidMarket": false
+        },
+        {
+          "name": "transferwise",
+          "displayName": "Wise",
+          "rate": 69.979,
+          "margin": 0,
+          "percentage": 0,
+          "isMidMarket": true
+        }
+      ]
+    }
+  },
+  "providerMargins": {
+    "ofx": {
+      "displayName": "OFX",
+      "averageMargin": -2.71,
+      "averagePercentage": -3.16,
+      "minMargin": -3.86,
+      "maxMargin": -1.79,
+      "dataPoints": 6
+    },
+    "xoom": {
+      "displayName": "Xoom",
+      "averageMargin": -1.06,
+      "averagePercentage": -1.13,
+      "minMargin": -1.27,
+      "maxMargin": -0.82,
+      "dataPoints": 4
+    },
+    "moneygram": {
+      "displayName": "Moneygram",
+      "averageMargin": -0.36,
+      "averagePercentage": -0.4,
+      "minMargin": -0.36,
+      "maxMargin": -0.36,
+      "dataPoints": 1
+    },
+    "remitly": {
+      "displayName": "Remitly",
+      "averageMargin": -0.53,
+      "averagePercentage": -0.68,
+      "minMargin": -0.89,
+      "maxMargin": -0.24,
+      "dataPoints": 6
+    },
+    "statebank": {
+      "displayName": "State Bank of India",
+      "averageMargin": -0.3,
+      "averagePercentage": -0.29,
+      "minMargin": -0.36,
+      "maxMargin": -0.26,
+      "dataPoints": 3
+    },
+    "transferwise": {
+      "displayName": "Wise",
+      "averageMargin": 0,
+      "averagePercentage": 0,
+      "minMargin": 0,
+      "maxMargin": 0,
+      "dataPoints": 6
+    },
+    "instarem": {
+      "displayName": "Instarem",
+      "averageMargin": -0.22,
+      "averagePercentage": -0.26,
+      "minMargin": -0.38,
+      "maxMargin": -0.05,
+      "dataPoints": 6
+    },
+    "westernunion": {
+      "displayName": "Western Union",
+      "averageMargin": -0.16,
+      "averagePercentage": -0.18,
+      "minMargin": -0.21,
+      "maxMargin": -0.12,
+      "dataPoints": 2
+    }
+  },
+  "summary": {}
+}

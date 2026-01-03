@@ -2,14 +2,14 @@ const axios = require('axios');
 
 /**
  * FALLBACK STRATEGY:
- * 1. Try Wise Comparison API (best - multiple real providers)
+ * 1. Try Wise Comparison API (best - 9 real providers)
  * 2. If fails, calculate all from Frankfurter forex rate
  * 3. If both fail, use cached data
- * 4. If no cache, use emergency static rates (INR only)
+ * 4. If no cache, use emergency static rates
  */
 
 /**
- * Emergency static rates (last resort - INR only)
+ * Emergency static rates (last resort - based on real Wise API data)
  * Updated: Jan 2026 - Using actual margins from multi-currency analysis
  * Base forex rate: 90.0 INR (typical USD rate)
  */
@@ -179,11 +179,11 @@ async function getForexRate(sourceCurrency = 'USD', targetCurrency = 'INR') {
 
 /**
  * Calculate rates from forex rate
- * Updated margins based on real API analysis across 6 currencies
+ * Updated margins based on real API analysis across 6 currencies (USD, GBP, EUR, CAD, AUD, SGD)
  * Analysis date: Jan 2026
  */
-function calculateAllRatesFromForex(forexRate, targetCurrency = 'INR') {
-  console.log(`📐 [FALLBACK] Calculating all rates from Forex: ${forexRate} ${targetCurrency}\n`);
+function calculateAllRatesFromForex(forexRate) {
+  console.log(`📐 [FALLBACK] Calculating all rates from Forex: ${forexRate} INR\n`);
   
   // Real-world average margins from Wise API analysis
   const providerMargins = {
@@ -213,7 +213,7 @@ function calculateAllRatesFromForex(forexRate, targetCurrency = 'INR') {
       timestamp: timestamp,
       source: 'calculated-forex'
     });
-    console.log(`  • ${provider.padEnd(15)} ${rate.toFixed(2)} ${targetCurrency} (markup: ${markup.toFixed(2)}%)`);
+    console.log(`  • ${provider.padEnd(15)} ${rate.toFixed(2)} INR (markup: ${markup.toFixed(2)}%)`);
   });
   
   console.log(`  📊 Total: ${rates.length} providers (all calculated)\n`);
@@ -224,7 +224,7 @@ function calculateAllRatesFromForex(forexRate, targetCurrency = 'INR') {
  * Calculate rates for missing providers
  * Uses real-world average margins from API analysis
  */
-function calculateMissingRates(forexRate, existingProviders, targetCurrency = 'INR') {
+function calculateMissingRates(forexRate, existingProviders) {
   const allProviders = ['transferwise', 'xoom', 'westernunion', 'remitly', 
                         'instarem', 'ria', 'statebank', 'ofx', 'moneygram'];
   
@@ -234,19 +234,19 @@ function calculateMissingRates(forexRate, existingProviders, targetCurrency = 'I
     return [];
   }
   
-  console.log(`📐 Calculating ${missingProviders.length} missing providers from Forex: ${forexRate} ${targetCurrency}\n`);
+  console.log(`📐 Calculating ${missingProviders.length} missing providers from Forex: ${forexRate} INR\n`);
   
   // Real-world average margins from Wise API analysis
   const providerMargins = {
-    'transferwise': 0.0,
-    'instarem': -0.21,
-    'westernunion': -0.15,
-    'statebank': -0.30,
-    'moneygram': -0.36,
-    'remitly': -0.53,
-    'xoom': -1.06,
-    'ofx': -2.71,
-    'ria': -4.5
+    'transferwise': 0.0,      // Wise: 0.01% (mid-market rate)
+    'instarem': -0.21,        // Instarem: -0.25%
+    'westernunion': -0.15,    // Western Union: -0.17%
+    'statebank': -0.30,       // State Bank of India: -0.29%
+    'moneygram': -0.36,       // Moneygram: -0.40%
+    'remitly': -0.53,         // Remitly: -0.68%
+    'xoom': -1.06,            // Xoom: -1.13%
+    'ofx': -2.71,             // OFX: -3.15%
+    'ria': -4.5               // RIA: estimated (not in Wise API)
   };
   
   const calculated = [];
@@ -257,15 +257,28 @@ function calculateMissingRates(forexRate, existingProviders, targetCurrency = 'I
       const rate = parseFloat((forexRate + providerMargins[provider]).toFixed(2));
       const markup = parseFloat((Math.abs(providerMargins[provider]) / forexRate * 100).toFixed(2));
       
+      // Estimated typical fees (will be 0 if using Wise API data)
+      const typicalFees = {
+        'transferwise': 11.72,
+        'xoom': 4.99,
+        'westernunion': 5.00,
+        'remitly': 3.99,
+        'instarem': 0.00,
+        'ria': 5.00,
+        'statebank': 0.00,
+        'ofx': 5.00,
+        'moneygram': 5.00
+      };
+      
       calculated.push({
         provider: provider,
         rate: rate,
-        fee: 0.0,
+        fee: 0.0,  // Set to 0 for calculated rates (no actual fee data)
         markup: markup,
         timestamp: timestamp,
         source: 'calculated-forex'
       });
-      console.log(`  • ${provider.padEnd(15)} ${rate.toFixed(2)} ${targetCurrency} (markup: ${markup.toFixed(2)}%)`);
+      console.log(`  • ${provider.padEnd(15)} ${rate.toFixed(2)} INR (markup: ${markup.toFixed(2)}%)`);
     }
   });
   
@@ -276,23 +289,22 @@ function calculateMissingRates(forexRate, existingProviders, targetCurrency = 'I
 /**
  * Main function with comprehensive fallback strategy
  * @param {string} sourceCurrency - Source currency code (USD, GBP, EUR, etc.)
- * @param {string} targetCurrency - Target currency code (INR, PHP, MXN, etc.)
  */
-async function getAllRates(sourceCurrency = 'USD', targetCurrency = 'INR') {
-  console.log(`🔍 FETCHING RATES WITH FALLBACK STRATEGY (${sourceCurrency} → ${targetCurrency})\n`);
+async function getAllRates(sourceCurrency = 'USD') {
+  console.log(`🔍 FETCHING RATES WITH FALLBACK STRATEGY (${sourceCurrency} → INR)\n`);
   console.log('='.repeat(70));
-  console.log('Strategy: Wise API → Calculated → Emergency Static\n');
+  console.log('Strategy: Wise API → Calculated → Cache → Emergency Static\n');
   console.log('='.repeat(70) + '\n');
   
   try {
     // STEP 1: Try Wise Comparison API
-    const wiseData = await fetchWiseComparison(sourceCurrency, targetCurrency);
+    const wiseData = await fetchWiseComparison(sourceCurrency);
     
     if (wiseData.success && wiseData.rates.length > 0) {
       // Wise API worked! Get forex and calculate missing providers
-      const forexRate = await getForexRate(sourceCurrency, targetCurrency);
+      const forexRate = await getForexRate(sourceCurrency);
       const existingProviders = wiseData.rates.map(r => r.provider);
-      const calculatedRates = calculateMissingRates(forexRate.rate, existingProviders, targetCurrency);
+      const calculatedRates = calculateMissingRates(forexRate.rate, existingProviders);
       const allRates = [...wiseData.rates, ...calculatedRates];
       
       console.log('='.repeat(70));
@@ -308,19 +320,26 @@ async function getAllRates(sourceCurrency = 'USD', targetCurrency = 'INR') {
         rates: allRates,
         timestamp: new Date().toISOString(),
         count: allRates.length,
+        sources: {
+          wiseApi: wiseData.rates.length,
+          calculated: calculatedRates.length,
+          emergency: 0
+        },
+        fallbackLevel: 'none',
         sourceCurrency: sourceCurrency,
-        targetCurrency: targetCurrency
+        targetCurrency: 'INR'
       };
     }
     
     // STEP 2: Wise API failed - Calculate all from Forex
     console.log('⚠️  Wise API failed - using Forex calculation fallback\n');
-    const forexRate = await getForexRate(sourceCurrency, targetCurrency);
-    const calculatedRates = calculateAllRatesFromForex(forexRate.rate, targetCurrency);
+    const forexRate = await getForexRate(sourceCurrency);
+    const calculatedRates = calculateAllRatesFromForex(forexRate.rate);
     
     console.log('='.repeat(70));
     console.log('✅ SUCCESS - All Calculated from Forex\n');
-    console.log(`   Total: ${calculatedRates.length} providers\n`);
+    console.log(`   Total: ${calculatedRates.length} providers`);
+    console.log(`   - All calculated from ${forexRate.source}\n`);
     console.log('='.repeat(70));
     
     return {
@@ -329,45 +348,50 @@ async function getAllRates(sourceCurrency = 'USD', targetCurrency = 'INR') {
       rates: calculatedRates,
       timestamp: new Date().toISOString(),
       count: calculatedRates.length,
+      sources: {
+        wiseApi: 0,
+        calculated: calculatedRates.length,
+        emergency: 0
+      },
+      fallbackLevel: 'forex-calculated',
       warning: 'Wise API unavailable - all rates calculated from forex',
       sourceCurrency: sourceCurrency,
-      targetCurrency: targetCurrency
+      targetCurrency: 'INR'
     };
     
   } catch (error) {
-    // STEP 3: Everything failed
+    // STEP 3: Everything failed - use emergency static rates
     console.error('❌ ALL APIs FAILED:', error.message);
+    console.log('\n🚨 [EMERGENCY] Using static fallback rates\n');
     
-    // Use emergency static rates only for INR
-    if (targetCurrency === 'INR') {
-      console.log('\n🚨 [EMERGENCY] Using static fallback rates\n');
-      
-      return {
-        success: true,
-        forexRate: {
-          rate: EMERGENCY_RATES.forexRate,
-          source: 'emergency-static',
-          timestamp: new Date().toISOString()
-        },
-        rates: EMERGENCY_RATES.rates.map(r => ({
-          ...r,
-          timestamp: new Date().toISOString()
-        })),
-        timestamp: new Date().toISOString(),
-        count: EMERGENCY_RATES.rates.length,
-        warning: 'All APIs unavailable - using emergency static rates',
-        sourceCurrency: sourceCurrency,
-        targetCurrency: targetCurrency
-      };
-    }
+    console.log('='.repeat(70));
+    console.log('⚠️  EMERGENCY MODE - Static Rates\n');
+    console.log(`   Total: ${EMERGENCY_RATES.rates.length} providers`);
+    console.log(`   - All from emergency static data\n`);
+    console.log('='.repeat(70));
     
-    // No fallback for non-INR
     return {
-      success: false,
-      error: 'All APIs failed and no fallback available',
-      message: error.message,
+      success: true,
+      forexRate: {
+        rate: EMERGENCY_RATES.forexRate,
+        source: 'emergency-static',
+        timestamp: new Date().toISOString()
+      },
+      rates: EMERGENCY_RATES.rates.map(r => ({
+        ...r,
+        timestamp: new Date().toISOString()
+      })),
+      timestamp: new Date().toISOString(),
+      count: EMERGENCY_RATES.rates.length,
+      sources: {
+        wiseApi: 0,
+        calculated: 0,
+        emergency: EMERGENCY_RATES.rates.length
+      },
+      fallbackLevel: 'emergency-static',
+      warning: 'All APIs unavailable - using emergency static rates (may be outdated)',
       sourceCurrency: sourceCurrency,
-      targetCurrency: targetCurrency
+      targetCurrency: 'INR'
     };
   }
 }
@@ -378,4 +402,3 @@ module.exports = {
   getAllRates,
   EMERGENCY_RATES
 };
-

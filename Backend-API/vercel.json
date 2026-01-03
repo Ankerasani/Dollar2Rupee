@@ -15,10 +15,21 @@
     {
       "src": "/api/forex",
       "dest": "/api/forex.js"
+    },
+    {
+      "src": "/api/monitor-margins",
+      "dest": "/api/monitor-margins.js"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/monitor-margins",
+      "schedule": "0 0 * * *"
     }
   ],
   "env": {
     "NODE_ENV": "production"
   }
 }
+
 

@@ -48,6 +48,7 @@ class CoreDataStack {
             remittance.dateString = rate.dateString
             remittance.rate = rate.rate
             remittance.forexRate = rate.forexRate
+            remittance.sourceCurrency = rate.sourceCurrency
             return remittance
         }
         return nil
@@ -63,14 +64,60 @@ class CoreDataStack {
     
     // Updating data
     static func saveInCoreDataWith(array: [Rate]) {
+        guard !array.isEmpty else { return }
+        
+        // Get today's date and source currency
+        let today = Date()
+        let currentDateString = today.toString(dateFormat: "dd-MMM-yyyy")
+        let sourceCurrency = array.first?.sourceCurrency ?? "USD"
+        
+        // Delete existing data for today and this currency to avoid duplicates
+        deleteTodayData(forCurrency: sourceCurrency, dateString: currentDateString)
+        
+        // Save new data
         _ = array.map{self.createPhotoEntityFrom(rate: $0)}
         self.saveContext()
+    }
+    
+    // Delete today's data for a specific currency
+    private static func deleteTodayData(forCurrency currency: String, dateString: String) {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: String(describing: Remittance.self))
+        fetchRequest.predicate = NSPredicate(format: "sourceCurrency == %@ AND dateString == %@", currency, dateString)
+        
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        
+        do {
+            try context.execute(deleteRequest)
+            try context.save()
+        } catch {
+            print("Failed to delete existing data: \(error)")
+        }
     }
     
     static func getCoreDataObjects() -> Dictionary<String,[Remittance]> {
         do {
             try CoreDataStack.fetchedhResultController.performFetch()
             let objects = CoreDataStack.fetchedhResultController.fetchedObjects
+            guard let remittance = objects as? [Remittance] else {
+                return [:]
+            }
+            
+            let sortedFields = Dictionary(grouping: remittance) {$0.dateString}
+            return sortedFields as? Dictionary<String, [Remittance]> ?? [:]
+        } catch _  {
+            return [:]
+        }
+    }
+    
+    static func getCoreDataObjects(forCurrency currency: String) -> Dictionary<String,[Remittance]> {
+        do {
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: String(describing: Remittance.self))
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "dateString", ascending: false)]
+            fetchRequest.predicate = NSPredicate(format: "sourceCurrency == %@", currency)
+            
+            let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: CoreDataStack.context, sectionNameKeyPath: nil, cacheName: nil)
+            try frc.performFetch()
+            let objects = frc.fetchedObjects
             guard let remittance = objects as? [Remittance] else {
                 return [:]
             }

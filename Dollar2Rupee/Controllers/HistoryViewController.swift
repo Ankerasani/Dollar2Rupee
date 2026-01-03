@@ -13,6 +13,7 @@ class HistoryViewController: UIViewController {
     
     let cellId = "cellId"
     public var remittanceObjects = Dictionary<String, [Remittance]>()
+    public var sourceCurrency: String = "USD"
     
     lazy var rateCollection: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -51,7 +52,8 @@ class HistoryViewController: UIViewController {
     }
     
     fileprivate func setupNavBar(){
-        navigationItem.title = .titleRates
+        let currency = Currency.currency(for: sourceCurrency) ?? Currency.default
+        navigationItem.title = "History - \(currency.flag) \(currency.code)"
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationController?.navigationBar.largeTitleTextAttributes = [.foregroundColor:#colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.8041923415), .font: UIFont(name: "AppleSDGothicNeo-Light", size: 30) ?? UIFont.systemFont(ofSize: 30)]
         navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.7997634243),.font: UIFont(name: "AppleSDGothicNeo-Light", size: 20) ?? UIFont.systemFont(ofSize: 20)]

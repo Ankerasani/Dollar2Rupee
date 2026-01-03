@@ -15,14 +15,35 @@ class MainVC: UIViewController {
     
     let cellId = "cellId"
     var rates = [Rate]()
-    var forexRate = Rate(currency: "", rate: 0.0, dateString: "", forexRate: "")
+    var forexRate = Rate(currency: "", rate: 0.0, dateString: "", forexRate: "", sourceCurrency: "USD")
     var filtredResults = [Rate]()
     var currenntCurrency: String = "USD"
+    var currentDestinationCurrency: String = "INR" // Track destination currency
     let menuCellId = "menuCellId"
     var menuShowing = true
     var heightAnchor: NSLayoutConstraint?
     var menuList = [Menu]()
     let historyButton = MainButton(text: "History  ", font: UIFont(name: .regularFont, size: 18), textColor: #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0), backGroundColor: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0))
+    let rateAlertButton = MainButton(text: "🔔", font: UIFont.systemFont(ofSize: 22), textColor: #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0), backGroundColor: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0))
+    
+    lazy var settingsButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Use SF Symbol for settings (better than emoji)
+        if #available(iOS 13.0, *) {
+            let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+            let image = UIImage(systemName: "gearshape", withConfiguration: config)
+            button.setImage(image, for: .normal)
+            button.tintColor = .white
+        } else {
+            button.setTitle("⚙️", for: .normal)
+            button.titleLabel?.font = UIFont.systemFont(ofSize: 22)
+        }
+        
+        button.addTarget(self, action: #selector(showSettings), for: .touchUpInside)
+        return button
+    }()
 
     
     lazy var gradientView: PastelView = {
@@ -88,12 +109,91 @@ class MainVC: UIViewController {
     }()
     
     lazy var tapToEditLabel: UILabel = {
-        let label = MainSmallLabel(text: "Tap amount to edit", textAligment: .center, numberOfLines: 1)
+        let currency = CurrencyManager.shared.selectedCurrency
+        let label = MainSmallLabel(text: "Amount in \(currency.flag) \(currency.code) to send", textAligment: .center, numberOfLines: 1)
         label.isUserInteractionEnabled = false  // Don't intercept touches - pass them through to text field
         return label
     }()
     
-    // Currency Selector
+    // MARK: - Side-by-Side Currency Selectors
+    
+    lazy var currencyContainerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.95)
+        view.layer.cornerRadius = 12
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.shadowRadius = 4
+        view.layer.shadowOpacity = 0.1
+        return view
+    }()
+    
+    lazy var fromLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "From:"
+        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        label.textColor = UIColor.darkGray
+        return label
+    }()
+    
+    lazy var toLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "To:"
+        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        label.textColor = UIColor.darkGray
+        return label
+    }()
+    
+    lazy var fromCurrencyButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.backgroundColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 0.15)
+        button.layer.cornerRadius = 8
+        button.layer.borderWidth = 1.5
+        button.layer.borderColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
+        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        button.setTitleColor(#colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1), for: .normal)
+        button.addTarget(self, action: #selector(showSourceCurrencyPicker), for: .touchUpInside)
+        
+        let currency = CurrencyManager.shared.selectedCurrency
+        button.setTitle("\(currency.flag) \(currency.code) ▼", for: .normal)
+        
+        return button
+    }()
+    
+    lazy var toCurrencyButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.backgroundColor = #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 0.15)
+        button.layer.cornerRadius = 8
+        button.layer.borderWidth = 1.5
+        button.layer.borderColor = #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 1)
+        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        button.setTitleColor(#colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 1), for: .normal)
+        button.addTarget(self, action: #selector(showDestinationCurrencyPicker), for: .touchUpInside)
+        
+        let destination = DestinationCurrency.allDestinations[0]
+        button.setTitle("\(destination.flag) \(destination.code) ▼", for: .normal)
+        
+        return button
+    }()
+    
+    lazy var arrowLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "→"
+        label.font = UIFont.systemFont(ofSize: 20, weight: .bold)
+        label.textColor = UIColor.gray
+        return label
+    }()
+    
+    // Keep old controls hidden for backward compatibility
+    // Source Currency Selector
     lazy var currencySegmentControl: UISegmentedControl = {
         let items = Currency.allCurrencies.map { "\($0.flag) \($0.symbol)" }
         let segment = UISegmentedControl(items: items)
@@ -101,6 +201,7 @@ class MainVC: UIViewController {
         segment.selectedSegmentIndex = 0 // Default to USD
         segment.backgroundColor = UIColor.white.withAlphaComponent(0.9)
         segment.tintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
+        segment.isHidden = true // Hide old control
         
         if #available(iOS 13.0, *) {
             segment.selectedSegmentTintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
@@ -108,6 +209,28 @@ class MainVC: UIViewController {
         
         segment.setTitleTextAttributes([NSAttributedString.Key.foregroundColor: UIColor.white], for: .selected)
         segment.addTarget(self, action: #selector(currencyChanged), for: .valueChanged)
+        return segment
+    }()
+    
+    // Destination Currency Label
+    lazy var sendingToLabel = MainSmallLabel(text: "Sending to", textAligment: .center, numberOfLines: 1)
+    
+    // Destination Currency Selector
+    lazy var destinationSegmentControl: UISegmentedControl = {
+        let items = DestinationCurrency.allDestinations.map { "\($0.flag) \($0.code)" }
+        let segment = UISegmentedControl(items: items)
+        segment.translatesAutoresizingMaskIntoConstraints = false
+        segment.selectedSegmentIndex = 0 // Default to INR (India)
+        segment.backgroundColor = UIColor.white.withAlphaComponent(0.9)
+        segment.tintColor = #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 1)
+        segment.isHidden = true // Hide old control
+        
+        if #available(iOS 13.0, *) {
+            segment.selectedSegmentTintColor = #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 1)
+        }
+        
+        segment.setTitleTextAttributes([NSAttributedString.Key.foregroundColor: UIColor.white], for: .selected)
+        segment.addTarget(self, action: #selector(destinationChanged), for: .valueChanged)
         return segment
     }()
     
@@ -120,11 +243,16 @@ class MainVC: UIViewController {
     lazy var disclaimerLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "ℹ️ Independent comparison tool. We don't process transfers. Tap 'View Offer' to visit the provider's website."
-        label.font = UIFont(name: .liteFont, size: 11)
-        label.textColor = UIColor.darkGray.withAlphaComponent(0.7)
+        label.text = "ℹ️ We compare rates, not process transfers. Rates shown are estimates and may differ from actual provider rates. Always verify on provider website before sending."
+        label.font = UIFont(name: .regularFont, size: 14)
+        label.textColor = UIColor.darkGray
         label.textAlignment = .center
         label.numberOfLines = 0
+        //label.backgroundColor = UIColor.lightGray.withAlphaComponent(0.2)
+       // label.layer.cornerRadius = 10
+        //label.clipsToBounds = true
+       // label.layer.borderWidth = 1
+        //label.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.4).cgColor
         return label
     }()
     
@@ -132,18 +260,20 @@ class MainVC: UIViewController {
         let tf = UITextField()
         tf.translatesAutoresizingMaskIntoConstraints = false
         tf.textColor = UIColor.white
-        let currency = CurrencyManager.shared.selectedCurrency
-        tf.attributedText =  "^{\(currency.symbol)}\("1.00")".superscripted(font: UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium))
+        tf.text = "1000"  // Start with plain text
         tf.layer.borderWidth = 0.0
-        tf.keyboardType = UIKeyboardType.decimalPad
+        tf.keyboardType = UIKeyboardType.numberPad  // Changed to numberPad for better UX
         tf.layer.borderColor = UIColor.white.cgColor.copy(alpha: 0.5)
         tf.textAlignment = .center
         tf.layer.cornerRadius = 0
-        tf.addTarget(self, action: #selector(handleInput), for: .editingChanged)
+        tf.font = UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium)
         
-        // Ensure text field is interactive
+        // Ensure text field is interactive and selectable
         tf.isUserInteractionEnabled = true
         tf.isEnabled = true
+        
+        // Make text selectable
+        tf.clearButtonMode = .whileEditing
         
         // Add toolbar with Done button
         let toolbar = UIToolbar()
@@ -153,6 +283,9 @@ class MainVC: UIViewController {
         toolbar.items = [flexSpace, doneButton]
         tf.inputAccessoryView = toolbar
         
+        // Add target for immediate updates
+        tf.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
+        
         return tf
     }()
     
@@ -161,25 +294,38 @@ class MainVC: UIViewController {
         view.endEditing(true)
     }
     
-    
-    @objc public func handleInput(textField:UITextField){
-        let currency = CurrencyManager.shared.selectedCurrency
+    @objc func textFieldDidChange(_ textField: UITextField) {
+        // Get the raw text (numbers only)
+        guard var text = textField.text else { return }
         
-        var string = mainTextField.text!
-        // Remove all currency symbols
-        string = string.replacingOccurrences(of: "$", with: "")
-        string = string.replacingOccurrences(of: "£", with: "")
-        string = string.replacingOccurrences(of: "€", with: "")
-        string = string.replacingOccurrences(of: "C$", with: "")
-        string = string.replacingOccurrences(of: "A$", with: "")
-        string = string.replacingOccurrences(of: "S$", with: "")
+        // Remove any non-numeric characters except decimal point
+        text = text.filter { "0123456789.".contains($0) }
         
-        string = string.currencyInputFormatting()
-        if string.isEmpty {
-            string = "0"
+        // Prevent multiple decimal points
+        let components = text.components(separatedBy: ".")
+        if components.count > 2 {
+            text = components[0] + "." + components[1...].joined()
         }
-        mainTextField.attributedText =  "^{\(currency.symbol)}\(string)".superscripted(font: UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium))
+        
+        // Limit to 2 decimal places
+        if let decimalIndex = text.firstIndex(of: ".") {
+            let afterDecimal = text[text.index(after: decimalIndex)...]
+            if afterDecimal.count > 2 {
+                let endIndex = text.index(decimalIndex, offsetBy: 3)
+                text = String(text[..<endIndex])
+            }
+        }
+        
+        // Update the text field
+        textField.text = text
+        
+        // Trigger rate recalculation
         rateCollection.reloadData()
+    }
+    
+    // Legacy function - kept for compatibility but now uses textFieldDidChange
+    @objc public func handleInput(textField:UITextField){
+        textFieldDidChange(textField)
     }
     
     @objc func currencyChanged(_ sender: UISegmentedControl) {
@@ -205,6 +351,9 @@ class MainVC: UIViewController {
         
         // Update text field symbol
         updateCurrencySymbol()
+        
+        // Update the label to show current currency
+        tapToEditLabel.text = "Amount in \(selectedCurrency.flag) \(selectedCurrency.code) to send"
         
         // Clear existing rates
         print("🗑️  Clearing existing rates (\(self.rates.count) items)")
@@ -243,20 +392,107 @@ class MainVC: UIViewController {
     }
     
     func updateCurrencySymbol() {
-        let currency = CurrencyManager.shared.selectedCurrency
-        var string = mainTextField.text!
-        // Remove all currency symbols
-        string = string.replacingOccurrences(of: "$", with: "")
-        string = string.replacingOccurrences(of: "£", with: "")
-        string = string.replacingOccurrences(of: "€", with: "")
-        string = string.replacingOccurrences(of: "C$", with: "")
-        string = string.replacingOccurrences(of: "A$", with: "")
-        string = string.replacingOccurrences(of: "S$", with: "")
-        
-        if string.isEmpty {
-            string = "1.00"
+        // Just keep the current numeric value, no need to change it
+        // The currency symbol is now shown in the placeholder or label
+        if mainTextField.text == nil || mainTextField.text!.isEmpty {
+            mainTextField.text = "1000"
         }
-        mainTextField.attributedText =  "^{\(currency.symbol)}\(string)".superscripted(font: UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium))
+    }
+    
+    @objc func destinationChanged(_ sender: UISegmentedControl) {
+        print("\n🌍 ========== DESTINATION CHANGE STARTED ==========")
+        print("📍 Segment index: \(sender.selectedSegmentIndex)")
+        
+        let selectedDestination = DestinationCurrency.allDestinations[sender.selectedSegmentIndex]
+        print("📍 Selected destination: \(selectedDestination.code) (\(selectedDestination.name))")
+        print("📍 Currency symbol: \(selectedDestination.symbol)")
+        
+        // Update current destination
+        currentDestinationCurrency = selectedDestination.code
+        
+        // Save selection
+        UserDefaults.standard.set(selectedDestination.code, forKey: "selectedDestinationCurrency")
+        print("💾 Saved destination to UserDefaults: \(selectedDestination.code)")
+        
+        // Clear existing rates
+        print("🗑️  Clearing existing rates (\(self.rates.count) items)")
+        self.rates = []
+        self.rateCollection.reloadData()
+        
+        // Fetch new rates for selected destination
+        print("📡 Calling getRates()...")
+        let sourceCurrency = CurrencyManager.shared.selectedCurrency.code
+        print("📡 Fetching rates: \(sourceCurrency) → \(selectedDestination.code)")
+        
+        self.getRates { (result) in
+            switch result {
+            case .Success(let data):
+                print("✅ Successfully loaded \(data.count) providers for \(sourceCurrency) → \(selectedDestination.code)")
+                print("✅ First 3 rates: \(data.prefix(3).map { "\($0.currency): \($0.rate)" }.joined(separator: ", "))")
+                // Save to Core Data
+                CoreDataStack.saveInCoreDataWith(array: data)
+                print("🌍 ========== DESTINATION CHANGE COMPLETED ==========\n")
+            case .Error(let errorMessage):
+                print("❌ Error loading rates for \(selectedDestination.code): \(errorMessage)")
+                print("🌍 ========== DESTINATION CHANGE FAILED ==========\n")
+                DispatchQueue.main.async {
+                    // Show error alert
+                    let alert = UIAlertController(
+                        title: "Error Loading Rates",
+                        message: "Could not load rates for \(selectedDestination.name). Please check your internet connection.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Currency Picker Actions
+    
+    @objc func showSourceCurrencyPicker() {
+        let alert = UIAlertController(title: "Select Source Currency", message: nil, preferredStyle: .actionSheet)
+        
+        for (index, currency) in Currency.allCurrencies.enumerated() {
+            let action = UIAlertAction(title: "\(currency.flag) \(currency.name) (\(currency.code))", style: .default) { _ in
+                self.currencySegmentControl.selectedSegmentIndex = index
+                self.fromCurrencyButton.setTitle("\(currency.flag) \(currency.code) ▼", for: .normal)
+                self.currencyChanged(self.currencySegmentControl)
+            }
+            alert.addAction(action)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = fromCurrencyButton
+            popover.sourceRect = fromCurrencyButton.bounds
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    @objc func showDestinationCurrencyPicker() {
+        let alert = UIAlertController(title: "Select Destination Currency", message: nil, preferredStyle: .actionSheet)
+        
+        for (index, destination) in DestinationCurrency.allDestinations.enumerated() {
+            let action = UIAlertAction(title: "\(destination.flag) \(destination.name) (\(destination.code))", style: .default) { _ in
+                self.destinationSegmentControl.selectedSegmentIndex = index
+                self.toCurrencyButton.setTitle("\(destination.flag) \(destination.code) ▼", for: .normal)
+                self.destinationChanged(self.destinationSegmentControl)
+            }
+            alert.addAction(action)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = toCurrencyButton
+            popover.sourceRect = toCurrencyButton.bounds
+        }
+        
+        present(alert, animated: true)
     }
     
     
@@ -274,25 +510,68 @@ class MainVC: UIViewController {
         
         historyButton.titleLabel?.textAlignment = .left
         
-        view.addSubview(currencySegmentControl)
+        // Add new side-by-side currency selector
+        view.addSubview(currencyContainerView)
+        currencyContainerView.addSubview(fromLabel)
+        currencyContainerView.addSubview(fromCurrencyButton)
+        currencyContainerView.addSubview(arrowLabel)
+        currencyContainerView.addSubview(toLabel)
+        currencyContainerView.addSubview(toCurrencyButton)
+        
         view.addSubview(firstContainerView)
         view.addSubview(rateCollection)
         view.addSubview(disclaimerLabel)
         rateCollection.addSubview(noDataLabel)
         firstContainerView.addSubview(priceLabel)
+        firstContainerView.addSubview(rateAlertButton)
+        firstContainerView.addSubview(settingsButton)
         firstContainerView.addSubview(historyButton)
         firstContainerView.addSubview(mainTextField)
         firstContainerView.addSubview(tapToEditLabel)
         
-        // Currency Selector Constraints
-        currencySegmentControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8).isActive = true
-        currencySegmentControl.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
-        currencySegmentControl.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
-        currencySegmentControl.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        // Currency Container Constraints
+        currencyContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12).isActive = true
+        currencyContainerView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 16).isActive = true
+        currencyContainerView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -16).isActive = true
+        currencyContainerView.heightAnchor.constraint(equalToConstant: 70).isActive = true
+        
+        // From Label
+        fromLabel.topAnchor.constraint(equalTo: currencyContainerView.topAnchor, constant: 8).isActive = true
+        fromLabel.leftAnchor.constraint(equalTo: currencyContainerView.leftAnchor, constant: 12).isActive = true
+        
+        // From Currency Button
+        fromCurrencyButton.topAnchor.constraint(equalTo: fromLabel.bottomAnchor, constant: 4).isActive = true
+        fromCurrencyButton.leftAnchor.constraint(equalTo: currencyContainerView.leftAnchor, constant: 12).isActive = true
+        fromCurrencyButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+        fromCurrencyButton.widthAnchor.constraint(equalToConstant: 120).isActive = true
+        
+        // Arrow Label
+        arrowLabel.centerYAnchor.constraint(equalTo: fromCurrencyButton.centerYAnchor).isActive = true
+        arrowLabel.centerXAnchor.constraint(equalTo: currencyContainerView.centerXAnchor).isActive = true
+        
+        // To Label
+        toLabel.topAnchor.constraint(equalTo: currencyContainerView.topAnchor, constant: 8).isActive = true
+        toLabel.rightAnchor.constraint(equalTo: currencyContainerView.rightAnchor, constant: -12).isActive = true
+        
+        // To Currency Button
+        toCurrencyButton.topAnchor.constraint(equalTo: toLabel.bottomAnchor, constant: 4).isActive = true
+        toCurrencyButton.rightAnchor.constraint(equalTo: currencyContainerView.rightAnchor, constant: -12).isActive = true
+        toCurrencyButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+        toCurrencyButton.widthAnchor.constraint(equalToConstant: 120).isActive = true
         
         priceLabel.leftAnchor.constraint(equalTo: firstContainerView.leftAnchor, constant: 8).isActive = true
         priceLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true
         priceLabel.topAnchor.constraint(equalTo: firstContainerView.topAnchor, constant: 8).isActive = true
+        
+        rateAlertButton.rightAnchor.constraint(equalTo: settingsButton.leftAnchor, constant: -8).isActive = true
+        rateAlertButton.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        rateAlertButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        rateAlertButton.topAnchor.constraint(equalTo: firstContainerView.topAnchor, constant: 8).isActive = true
+        
+        settingsButton.rightAnchor.constraint(equalTo: historyButton.leftAnchor, constant: -8).isActive = true
+        settingsButton.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        settingsButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        settingsButton.topAnchor.constraint(equalTo: firstContainerView.topAnchor, constant: 8).isActive = true
         
         historyButton.rightAnchor.constraint(equalTo: firstContainerView.rightAnchor, constant: -8).isActive = true
         historyButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
@@ -311,7 +590,7 @@ class MainVC: UIViewController {
         
         noDataLabel.heightAnchor.constraint(equalToConstant: 140).isActive = true
         
-        firstContainerView.topAnchor.constraint(equalTo: currencySegmentControl.bottomAnchor, constant: 12).isActive = true
+        firstContainerView.topAnchor.constraint(equalTo: currencyContainerView.bottomAnchor, constant: 12).isActive = true
         firstContainerView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
         firstContainerView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
         firstContainerView.heightAnchor.constraint(equalToConstant: 200).isActive = true
@@ -332,23 +611,191 @@ class MainVC: UIViewController {
         rateCollection.bottomAnchor.constraint(equalTo: disclaimerLabel.topAnchor, constant: -8).isActive = true
         rateCollection.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         
-        disclaimerLabel.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
-        disclaimerLabel.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
+        disclaimerLabel.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 12).isActive = true
+        disclaimerLabel.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -12).isActive = true
         disclaimerLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8).isActive = true
-        disclaimerLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 30).isActive = true
+        disclaimerLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 55).isActive = true
         
+        rateAlertButton.addTarget(self, action: #selector(showRateAlertDialog), for: .touchUpInside)
         historyButton.addTarget(self, action: #selector(showHistory), for: .touchUpInside)
         
     }
     
     @objc fileprivate func showHistory() {
         let historyVC = HistoryViewController()
-        historyVC.remittanceObjects = CoreDataStack.getCoreDataObjects()
+        let selectedCurrency = CurrencyManager.shared.selectedCurrency
+        historyVC.sourceCurrency = selectedCurrency.code
+        historyVC.remittanceObjects = CoreDataStack.getCoreDataObjects(forCurrency: selectedCurrency.code)
         //  let navigationVC = UINavigationController(rootViewController: historyVC)
         //  navigationVC.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
         // navigationVC.navigationBar.backItem?.title = "Back"
         //  present(navigationVC, animated: true, completion: nil)
         navigationController?.pushViewController(historyVC, animated: true)
+    }
+    
+    @objc fileprivate func showSettings() {
+        let settingsVC = SettingsVC()
+        navigationController?.pushViewController(settingsVC, animated: true)
+    }
+    
+    @objc fileprivate func showRateAlertDialog() {
+        // Check notification permission first
+        NotificationManager.shared.checkPermission { [weak self] granted in
+            guard let self = self else { return }
+            
+            if !granted {
+                // Request permission
+                self.requestNotificationPermission()
+                return
+            }
+            
+            // Show rate alert dialog
+            self.presentRateAlertDialog()
+        }
+    }
+    
+    private func requestNotificationPermission() {
+        let alert = UIAlertController(
+            title: "Enable Notifications",
+            message: "To receive rate alerts, please enable notifications for this app.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Enable", style: .default) { [weak self] _ in
+            NotificationManager.shared.requestPermission { granted in
+                if granted {
+                    self?.presentRateAlertDialog()
+                } else {
+                    self?.showSettingsPrompt()
+                }
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func showSettingsPrompt() {
+        let alert = UIAlertController(
+            title: "Notifications Disabled",
+            message: "Please enable notifications in Settings to use rate alerts.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
+            if let url = URL(string: UIApplicationOpenSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func presentRateAlertDialog() {
+        let currency = CurrencyManager.shared.selectedCurrency
+        let symbol = DestinationCurrency.symbol(for: currentDestinationCurrency)
+        
+        // Check if alert already exists
+        let existingAlert = RateAlertManager.shared.getAlert(for: currency.code, targetCurrency: currentDestinationCurrency)
+        
+        let alert = UIAlertController(
+            title: "🔔 Set Rate Alert",
+            message: "Get notified when \(currency.code)→\(currentDestinationCurrency) reaches your target rate.\n\nCurrent rate: \(symbol)\(String(format: "%.2f", forexRate.rate))",
+            preferredStyle: .alert
+        )
+        
+        // Add text field for target rate
+        alert.addTextField { textField in
+            textField.placeholder = "Target rate (e.g., 90.00)"
+            textField.keyboardType = UIKeyboardType.decimalPad
+            if let existing = existingAlert {
+                textField.text = String(format: "%.2f", existing.targetRate)
+            }
+        }
+        
+        // Above/Below picker
+        alert.addAction(UIAlertAction(title: "Notify when ABOVE", style: .default) { [weak self] _ in
+            guard let self = self,
+                  let text = alert.textFields?.first?.text,
+                  let targetRate = Double(text) else {
+                return
+            }
+            
+            NotificationManager.shared.scheduleRateAlert(
+                targetRate: targetRate,
+                currency: currency.code,
+                targetCurrency: self.currentDestinationCurrency,
+                isAbove: true
+            )
+            
+            self.showRateAlertConfirmation(targetRate: targetRate, isAbove: true)
+        })
+        
+        alert.addAction(UIAlertAction(title: "Notify when BELOW", style: .default) { [weak self] _ in
+            guard let self = self,
+                  let text = alert.textFields?.first?.text,
+                  let targetRate = Double(text) else {
+                return
+            }
+            
+            NotificationManager.shared.scheduleRateAlert(
+                targetRate: targetRate,
+                currency: currency.code,
+                targetCurrency: self.currentDestinationCurrency,
+                isAbove: false
+            )
+            
+            self.showRateAlertConfirmation(targetRate: targetRate, isAbove: false)
+        })
+        
+        if existingAlert != nil {
+            alert.addAction(UIAlertAction(title: "Remove Alert", style: .destructive) { [weak self] _ in
+                guard let self = self else { return }
+                RateAlertManager.shared.removeAlert(for: currency.code, targetCurrency: self.currentDestinationCurrency)
+                self.showSimpleAlert(title: "Alert Removed", message: "Rate alert has been removed.")
+            })
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func showRateAlertConfirmation(targetRate: Double, isAbove: Bool) {
+        let currency = CurrencyManager.shared.selectedCurrency
+        let symbol = DestinationCurrency.symbol(for: currentDestinationCurrency)
+        let comparison = isAbove ? "above" : "below"
+        
+        showSimpleAlert(
+            title: "✅ Alert Set!",
+            message: "You'll be notified when \(currency.code)→\(currentDestinationCurrency) goes \(comparison) \(symbol)\(String(format: "%.2f", targetRate))"
+        )
+        
+        // Update bell icon to show active alert
+        updateRateAlertButtonAppearance()
+    }
+    
+    private func updateRateAlertButtonAppearance() {
+        let currency = CurrencyManager.shared.selectedCurrency
+        let hasAlert = RateAlertManager.shared.hasAlert(for: currency.code, targetCurrency: currentDestinationCurrency)
+        
+        // Change icon based on alert status
+        if hasAlert {
+            rateAlertButton.setTitle("🔔", for: .normal) // Bell with notification
+            rateAlertButton.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        } else {
+            rateAlertButton.setTitle("🔔", for: .normal) // Regular bell
+            rateAlertButton.backgroundColor = UIColor.clear
+        }
+    }
+    
+    private func showSimpleAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
     
@@ -371,12 +818,24 @@ class MainVC: UIViewController {
         mainTextField.delegate = self
         mainTextField.returnKeyType = UIReturnKeyType.done
         
-        // Set initial currency selection
+        // Set initial source currency selection
         let savedCurrency = CurrencyManager.shared.selectedCurrency
         if let index = Currency.allCurrencies.firstIndex(where: { $0.code == savedCurrency.code }) {
             currencySegmentControl.selectedSegmentIndex = index
         }
         updateCurrencySymbol()
+        
+        // Load saved destination currency
+        if let savedDestination = UserDefaults.standard.string(forKey: "selectedDestinationCurrency"),
+           let index = DestinationCurrency.allDestinations.firstIndex(where: { $0.code == savedDestination }) {
+            destinationSegmentControl.selectedSegmentIndex = index
+            currentDestinationCurrency = savedDestination
+            print("💾 Loaded saved destination: \(savedDestination)")
+        } else {
+            // Default to INR
+            currentDestinationCurrency = "INR"
+            print("💾 Using default destination: INR")
+        }
         
         NotificationCenter.default.addObserver(self, selector: #selector(self.updateViewLayout), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
         self.updateCollectionViewData()
@@ -400,7 +859,7 @@ class MainVC: UIViewController {
                 let currentDayObjects = CoreDataStack.checkCurrentDataObjects(objects: remittanceObjects)
                 
                 if currentDayObjects.count > 0 {
-                    self.rates = currentDayObjects.compactMap({ Rate(currency: $0.currancy ?? "unknown", rate: $0.rate, dateString: $0.dateString ?? "", forexRate: $0.forexRate ?? "")})
+                    self.rates = currentDayObjects.compactMap({ Rate(currency: $0.currancy ?? "unknown", rate: $0.rate, dateString: $0.dateString ?? "", forexRate: $0.forexRate ?? "", sourceCurrency: $0.sourceCurrency ?? "USD")})
                     self.rates = self.rates.sorted(by: { $0.rate > $1.rate })
                     
                     DispatchQueue.main.async {

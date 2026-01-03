@@ -93,12 +93,13 @@ extension MainVC {
     
     public func getRates(completion: @escaping (Result<[Rate]>) -> Void) {
         let currency = CurrencyManager.shared.selectedCurrency
-        print("  📍 getRates() - CurrencyManager currency: \(currency.code)")
+        let targetCurrency = currentDestinationCurrency
+        print("  📍 getRates() - Source: \(currency.code), Target: \(targetCurrency)")
         
-        APIService.fetchRates(currency: currency.code) { result in
+        APIService.fetchRates(currency: currency.code, targetCurrency: targetCurrency, completion: { result in
             switch result {
             case .Success(let rates):
-                print("  ✅ APIService returned \(rates.count) rates for \(currency.code)")
+                print("  ✅ APIService returned \(rates.count) rates for \(currency.code) → \(targetCurrency)")
                 if rates.count > 0 {
                     print("  📊 First rate: \(rates[0].currency) = \(rates[0].rate)")
                 }
@@ -111,7 +112,10 @@ extension MainVC {
                 // Sort by rate (highest first)
                 self.rates = self.rates.sorted(by: { $0.rate > $1.rate })
                 
-                print("  ✅ Successfully processed \(self.rates.count) rates for \(currency.code)")
+                print("  ✅ Successfully processed \(self.rates.count) rates for \(currency.code) → \(targetCurrency)")
+                
+                // Check rate alerts
+                self.checkRateAlertsIfNeeded()
                 
                 // Update UI on main thread
                 DispatchQueue.main.async {
@@ -121,12 +125,12 @@ extension MainVC {
                 }
                 
             case .Error(let errorMessage):
-                print("  ❌ Error fetching rates for \(currency.code): \(errorMessage)")
+                print("  ❌ Error fetching rates for \(currency.code) → \(targetCurrency): \(errorMessage)")
                 DispatchQueue.main.async {
                     completion(.Error(errorMessage))
                 }
             }
-        }
+        })
     }
     
     func openBrowser (urlString: String) {
@@ -170,6 +174,27 @@ extension MainVC {
         safariVC.preferredControlTintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
         safariVC.dismissButtonStyle = .close
         present(safariVC, animated: true, completion: nil)
+    }
+    
+    // MARK: - Rate Alert Checking
+    
+    fileprivate func checkRateAlertsIfNeeded() {
+        let currency = CurrencyManager.shared.selectedCurrency
+        let targetCurrency = currentDestinationCurrency
+        
+        // Check if there's an active alert for this currency pair
+        guard RateAlertManager.shared.hasAlert(for: currency.code, targetCurrency: targetCurrency),
+              let bestRate = rates.first else {
+            return
+        }
+        
+        // Check if alert condition is met
+        NotificationManager.shared.checkRateAlerts(
+            currentRate: bestRate.rate,
+            currency: currency.code,
+            targetCurrency: targetCurrency,
+            providerName: bestRate.currency
+        )
     }
 }
 

@@ -13,6 +13,8 @@
 		266A676F2F0913E100A1EBEA /* Currency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676E2F0913E100A1EBEA /* Currency.swift */; };
 		266A67702F0913E100A1EBEA /* Currency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676E2F0913E100A1EBEA /* Currency.swift */; };
 		266A67712F0913E100A1EBEA /* Currency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676E2F0913E100A1EBEA /* Currency.swift */; };
+		266A67732F09C3F200A1EBEA /* SettingsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A67722F09C3F200A1EBEA /* SettingsVC.swift */; };
+		266A67752F09D0BC00A1EBEA /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A67742F09D0BC00A1EBEA /* NotificationManager.swift */; };
 		BBF81E8DF93DE536378CC580 /* Pods_Dollar2RupeeTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CF6286C4FFD854D23F4FB2F /* Pods_Dollar2RupeeTests.framework */; };
 		C062571F2141639E002F9621 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C062571E2141639E002F9621 /* AppDelegate.swift */; };
 		C06257242141639E002F9621 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C06257222141639E002F9621 /* Main.storyboard */; };
@@ -84,6 +86,8 @@
 		22510FA53E7F34EDF2CF61D4 /* Pods-Dollar2Rupee.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Dollar2Rupee.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Dollar2Rupee/Pods-Dollar2Rupee.debug.xcconfig"; sourceTree = "<group>"; };
 		266A676A2F08FAE600A1EBEA /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		266A676E2F0913E100A1EBEA /* Currency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Currency.swift; sourceTree = "<group>"; };
+		266A67722F09C3F200A1EBEA /* SettingsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVC.swift; sourceTree = "<group>"; };
+		266A67742F09D0BC00A1EBEA /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		2CF6286C4FFD854D23F4FB2F /* Pods_Dollar2RupeeTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Dollar2RupeeTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		73796442E6EBD20F1001DAC2 /* Pods-Dollar2RupeeTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Dollar2RupeeTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-Dollar2RupeeTests/Pods-Dollar2RupeeTests.release.xcconfig"; sourceTree = "<group>"; };
 		B3D6B92B36B9A6A6C29C1CDD /* Pods_Dollar2Rupee.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Dollar2Rupee.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -255,6 +259,7 @@
 				C062578421416A30002F9621 /* NaviExt.swift */,
 				C0625755214163D3002F9621 /* TextExt.swift */,
 				C0625756214163D3002F9621 /* MenuTableExtension.swift */,
+				266A67742F09D0BC00A1EBEA /* NotificationManager.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -301,6 +306,7 @@
 				C0625782214168F4002F9621 /* NavigationVC.swift */,
 				C062578821416BF9002F9621 /* HistoryViewController.swift */,
 				DE9C37982259AB0F00C8ACE9 /* DetailsViewCOntroller.swift */,
+				266A67722F09C3F200A1EBEA /* SettingsVC.swift */,
 				DE7AB50D2262D66F00233ECD /* BrowserViewController.swift */,
 				DE7AB50E2262D66F00233ECD /* BrowserViewController.xib */,
 			);
@@ -546,6 +552,7 @@
 				DE7AB50F2262D66F00233ECD /* BrowserViewController.swift in Sources */,
 				C0625774214163D3002F9621 /* MainSmallLabel.swift in Sources */,
 				DE259D5822180BDB005CCD3E /* CircleMenuLoader.swift in Sources */,
+				266A67732F09C3F200A1EBEA /* SettingsVC.swift in Sources */,
 				DE259D5622180BD3005CCD3E /* CircleMenuButton.swift in Sources */,
 				C062578D21416D66002F9621 /* RateDiffCollection.swift in Sources */,
 				C0625779214163D3002F9621 /* MainLabel.swift in Sources */,
@@ -564,6 +571,7 @@
 				266A676B2F08FAE600A1EBEA /* APIService.swift in Sources */,
 				C062578921416BFA002F9621 /* HistoryViewController.swift in Sources */,
 				C062578B21416C8B002F9621 /* RateDiffCell.swift in Sources */,
+				266A67752F09D0BC00A1EBEA /* NotificationManager.swift in Sources */,
 				C0C35153214574EF0097AD4C /* ActionButton.swift in Sources */,
 				C062576F214163D3002F9621 /* MainHandlers.swift in Sources */,
 				DE259D5A2218BFFF005CCD3E /* Provider.swift in Sources */,

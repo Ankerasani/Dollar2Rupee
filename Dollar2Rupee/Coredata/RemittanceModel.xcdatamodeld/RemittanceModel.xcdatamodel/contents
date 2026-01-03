@@ -5,6 +5,7 @@
         <attribute name="dateString" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="forexRate" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="rate" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="sourceCurrency" optional="YES" attributeType="String" defaultValueString="USD" syncable="YES"/>
     </entity>
     <elements>
         <element name="Remittance" positionX="-63" positionY="-18" width="128" height="103"/>

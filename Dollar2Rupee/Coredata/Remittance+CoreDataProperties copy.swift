@@ -19,6 +19,7 @@ extension Remittance {
     @NSManaged public var rate: Double
     @NSManaged public var dateString: String?
     @NSManaged public var forexRate: String?
+    @NSManaged public var sourceCurrency: String?
 
 
 }

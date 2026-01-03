@@ -44,7 +44,7 @@ extension MainVC: UICollectionViewDelegate, UICollectionViewDataSource, UICollec
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
 
-        return CGSize(width: view.frame.width - 40, height: 64)
+        return CGSize(width: view.frame.width - 40, height: 90) // Increased from 64 to 90 for fee + speed
     }
     
     

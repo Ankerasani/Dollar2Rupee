@@ -16,13 +16,17 @@ class RateCell: UICollectionViewCell {
 
     let regularRate = MainLabel(text: "", textAligment: .left, numberOfLines: 1,color: UIColor.black, font: UIFont(name: .liteFont, size: 12))
     let currencyRate = MainLabel(text: "", textAligment: .left, numberOfLines: 1,color: #colorLiteral(red: 0.4192152619, green: 0.6452817321, blue: 0.2875428498, alpha: 1))
+    let feeLabel = MainLabel(text: "", textAligment: .left, numberOfLines: 1, color: UIColor.darkGray, font: UIFont(name: .liteFont, size: 10))
+    let deliveryLabel = MainLabel(text: "", textAligment: .right, numberOfLines: 1, color: UIColor.darkGray, font: UIFont(name: .liteFont, size: 10))
     let resulLabel = MainLabel(text: "", textAligment: .right, numberOfLines: 1)
     
     fileprivate func setupView(){
         style(view: contentView)
         contentView.addSubview(remittanceImage)
-        contentView.addSubview(regularRate)
+        // regularRate removed - no longer displayed
         contentView.addSubview(currencyRate)
+        contentView.addSubview(feeLabel)
+        contentView.addSubview(deliveryLabel)
         contentView.addSubview(doneButton)
         doneButton.isUserInteractionEnabled = false
         
@@ -31,14 +35,16 @@ class RateCell: UICollectionViewCell {
         remittanceImage.heightAnchor.constraint(equalToConstant: 50).isActive = true
         remittanceImage.widthAnchor.constraint(equalToConstant: 80).isActive = true
         
-        regularRate.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10).isActive = true
-        regularRate.bottomAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
-
-        regularRate.centerXAnchor.constraint(equalTo: contentView.centerXAnchor).isActive = true
-        regularRate.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+        // Currency rate positioned higher (no regular rate label above it)
+        currencyRate.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 15).isActive = true
+        currencyRate.leftAnchor.constraint(equalTo: remittanceImage.rightAnchor, constant: 30).isActive = true
         
-        currencyRate.topAnchor.constraint(equalTo: regularRate.bottomAnchor, constant: 3).isActive = true
-        currencyRate.leftAnchor.constraint(equalTo: regularRate.leftAnchor, constant: 0).isActive = true
+        feeLabel.topAnchor.constraint(equalTo: currencyRate.bottomAnchor, constant: 4).isActive = true
+        feeLabel.leftAnchor.constraint(equalTo: currencyRate.leftAnchor, constant: 0).isActive = true
+        feeLabel.rightAnchor.constraint(lessThanOrEqualTo: deliveryLabel.leftAnchor, constant: -4).isActive = true
+        
+        deliveryLabel.centerYAnchor.constraint(equalTo: feeLabel.centerYAnchor).isActive = true
+        deliveryLabel.rightAnchor.constraint(equalTo: doneButton.leftAnchor, constant: -8).isActive = true
         
         doneButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
         doneButton.rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: -10).isActive = true
@@ -74,13 +80,37 @@ class RateCell: UICollectionViewCell {
     }
     
     public func updateData(rate: Rate, entery: Double){
-        regularRate.text = "Regular rate"
+        // regularRate.text removed - label hidden
         var editableEntery = entery
         if Int(editableEntery) == 0 {
            editableEntery = 1
         }
         let roundedString = String(format: "%.2f", editableEntery * rate.rate)
-        currencyRate.attributedText =  "^{₹}\(roundedString) ".superscripted(font: UIFont.systemFont(ofSize: 17, weight: .semibold))
+        // Medium font size: 20pt (between original 17 and large 24)
+        currencyRate.attributedText =  "^{₹}\(roundedString) ".superscripted(font: UIFont.systemFont(ofSize: 22, weight: .semibold))
+        
+        // Debug: Log fee data
+        print("💵 Cell Update: \(rate.currency) - Fee: $\(rate.fee), Speed: \(rate.deliverySpeed)")
+        
+        // Display fee with indicator - Always show it prominently
+        if rate.fee == 0.0 {
+            feeLabel.text = "Fee: $0 (Free ⭐)"
+            feeLabel.textColor = #colorLiteral(red: 0.2745098174, green: 0.4862745106, blue: 0.1411764771, alpha: 1) // Green for free
+            feeLabel.font = UIFont.systemFont(ofSize: 11, weight: .semibold) // Slightly bigger and bold
+        } else {
+            feeLabel.text = String(format: "Fee: $%.2f", rate.fee)
+            feeLabel.textColor = #colorLiteral(red: 0.7450980544, green: 0.1568627506, blue: 0.07450980693, alpha: 1) // Red for paid fees
+            feeLabel.font = UIFont.systemFont(ofSize: 11, weight: .semibold) // Slightly bigger and bold
+        }
+        
+        // Display delivery speed
+        if !rate.deliverySpeed.isEmpty {
+            deliveryLabel.text = rate.deliverySpeed
+            deliveryLabel.textColor = UIColor.darkGray
+            deliveryLabel.font = UIFont.systemFont(ofSize: 11, weight: .medium)
+        } else {
+            deliveryLabel.text = ""
+        }
         
         var imageName = rate.currency.replacingOccurrences(of: " ", with: "")
         if imageName == "icicimoney2india" || imageName == "icicibankmoney2India" {

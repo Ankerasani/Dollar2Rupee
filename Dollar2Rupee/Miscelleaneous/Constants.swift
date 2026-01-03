@@ -8,6 +8,39 @@
 
 import Foundation
 
+// MARK: - Destination Currency Model
+struct DestinationCurrency {
+    let code: String
+    let name: String
+    let flag: String
+    let symbol: String
+    
+    static let allDestinations: [DestinationCurrency] = [
+        DestinationCurrency(code: "INR", name: "India", flag: "🇮🇳", symbol: "₹"),
+        DestinationCurrency(code: "PHP", name: "Philippines", flag: "🇵🇭", symbol: "₱"),
+        DestinationCurrency(code: "MXN", name: "Mexico", flag: "🇲🇽", symbol: "$"),
+        DestinationCurrency(code: "PKR", name: "Pakistan", flag: "🇵🇰", symbol: "₨"),
+        DestinationCurrency(code: "BDT", name: "Bangladesh", flag: "🇧🇩", symbol: "৳"),
+        DestinationCurrency(code: "NGN", name: "Nigeria", flag: "🇳🇬", symbol: "₦"),
+        DestinationCurrency(code: "VND", name: "Vietnam", flag: "🇻🇳", symbol: "₫"),
+        DestinationCurrency(code: "EGP", name: "Egypt", flag: "🇪🇬", symbol: "£"),
+        DestinationCurrency(code: "IDR", name: "Indonesia", flag: "🇮🇩", symbol: "Rp"),
+        DestinationCurrency(code: "COP", name: "Colombia", flag: "🇨🇴", symbol: "$")
+    ]
+    
+    static func currency(for code: String) -> DestinationCurrency? {
+        return allDestinations.first { $0.code == code }
+    }
+    
+    static func symbol(for code: String) -> String {
+        return currency(for: code)?.symbol ?? "$"
+    }
+    
+    static func displayText(for destination: DestinationCurrency) -> String {
+        return "\(destination.flag) \(destination.name) (\(destination.code))"
+    }
+}
+
 struct Constants {
     
     static func appStoreURL(appID: String) -> String {
