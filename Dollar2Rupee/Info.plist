@@ -22,16 +22,15 @@
 	<string>0.1.2</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
-		<string>transferwise</string>
-		<string>money2india</string>
-		<string>Xoom</string>
-		<string>western union</string>
-		<string>Remit2India</string>
-		<string>ria</string>
-		<string>transfast</string>
-		<string>remitly</string>
-		<string>remitmoney</string>
+		<string>wise</string>
+		<string>xoom</string>
 		<string>instarem</string>
+		<string>riamoneytransfer</string>
+		<string>remitly</string>
+		<string>westernunion</string>
+		<string>moneygram</string>
+		<string>chase</string>
+		<string>wellsfargo</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

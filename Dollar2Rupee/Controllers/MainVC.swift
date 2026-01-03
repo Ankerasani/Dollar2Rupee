@@ -87,7 +87,29 @@ class MainVC: UIViewController {
         return view
     }()
     
-    lazy var tapToEditLabel = MainSmallLabel(text: "Tap amount to edit", textAligment: .center, numberOfLines: 1)
+    lazy var tapToEditLabel: UILabel = {
+        let label = MainSmallLabel(text: "Tap amount to edit", textAligment: .center, numberOfLines: 1)
+        label.isUserInteractionEnabled = false  // Don't intercept touches - pass them through to text field
+        return label
+    }()
+    
+    // Currency Selector
+    lazy var currencySegmentControl: UISegmentedControl = {
+        let items = Currency.allCurrencies.map { "\($0.flag) \($0.symbol)" }
+        let segment = UISegmentedControl(items: items)
+        segment.translatesAutoresizingMaskIntoConstraints = false
+        segment.selectedSegmentIndex = 0 // Default to USD
+        segment.backgroundColor = UIColor.white.withAlphaComponent(0.9)
+        segment.tintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
+        
+        if #available(iOS 13.0, *) {
+            segment.selectedSegmentTintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
+        }
+        
+        segment.setTitleTextAttributes([NSAttributedString.Key.foregroundColor: UIColor.white], for: .selected)
+        segment.addTarget(self, action: #selector(currencyChanged), for: .valueChanged)
+        return segment
+    }()
     
     let firstContainerView = ShadowView()
     lazy var dateLabel = MainSmallLabel(text: "Last update: Unknown", textAligment: .left, numberOfLines: 1)
@@ -98,7 +120,7 @@ class MainVC: UIViewController {
     lazy var disclaimerLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "ℹ️ Dollar2Rupee is an independent comparison tool. We don't process transfers. Tap 'View Offer' to visit the provider's website."
+        label.text = "ℹ️ Independent comparison tool. We don't process transfers. Tap 'View Offer' to visit the provider's website."
         label.font = UIFont(name: .liteFont, size: 11)
         label.textColor = UIColor.darkGray.withAlphaComponent(0.7)
         label.textAlignment = .center
@@ -110,28 +132,131 @@ class MainVC: UIViewController {
         let tf = UITextField()
         tf.translatesAutoresizingMaskIntoConstraints = false
         tf.textColor = UIColor.white
-        tf.attributedText =  "^{$}\("1.00")".superscripted(font: UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium))
+        let currency = CurrencyManager.shared.selectedCurrency
+        tf.attributedText =  "^{\(currency.symbol)}\("1.00")".superscripted(font: UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium))
         tf.layer.borderWidth = 0.0
         tf.keyboardType = UIKeyboardType.decimalPad
         tf.layer.borderColor = UIColor.white.cgColor.copy(alpha: 0.5)
         tf.textAlignment = .center
         tf.layer.cornerRadius = 0
         tf.addTarget(self, action: #selector(handleInput), for: .editingChanged)
+        
+        // Ensure text field is interactive
+        tf.isUserInteractionEnabled = true
+        tf.isEnabled = true
+        
+        // Add toolbar with Done button
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissKeyboard))
+        toolbar.items = [flexSpace, doneButton]
+        tf.inputAccessoryView = toolbar
+        
         return tf
     }()
     
+    @objc func dismissKeyboard() {
+        mainTextField.resignFirstResponder()
+        view.endEditing(true)
+    }
+    
     
     @objc public func handleInput(textField:UITextField){
+        let currency = CurrencyManager.shared.selectedCurrency
         
         var string = mainTextField.text!
+        // Remove all currency symbols
         string = string.replacingOccurrences(of: "$", with: "")
+        string = string.replacingOccurrences(of: "£", with: "")
+        string = string.replacingOccurrences(of: "€", with: "")
+        string = string.replacingOccurrences(of: "C$", with: "")
+        string = string.replacingOccurrences(of: "A$", with: "")
+        string = string.replacingOccurrences(of: "S$", with: "")
         
         string = string.currencyInputFormatting()
         if string.isEmpty {
             string = "0"
         }
-        mainTextField.attributedText =  "^{$}\(string)".superscripted(font: UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium))
+        mainTextField.attributedText =  "^{\(currency.symbol)}\(string)".superscripted(font: UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium))
         rateCollection.reloadData()
+    }
+    
+    @objc func currencyChanged(_ sender: UISegmentedControl) {
+        print("\n🔄 ========== CURRENCY CHANGE STARTED ==========")
+        print("📍 Segment index: \(sender.selectedSegmentIndex)")
+        
+        let selectedCurrency = Currency.allCurrencies[sender.selectedSegmentIndex]
+        print("📍 Selected currency object: \(selectedCurrency.code) (\(selectedCurrency.name))")
+        
+        // CRITICAL: Update the manager FIRST
+        CurrencyManager.shared.selectedCurrency = selectedCurrency
+        
+        // Verify it was saved
+        let verifyCode = CurrencyManager.shared.selectedCurrency.code
+        print("✅ CurrencyManager.shared.selectedCurrency.code = \(verifyCode)")
+        
+        if verifyCode != selectedCurrency.code {
+            print("❌❌❌ CRITICAL ERROR: CurrencyManager not updated correctly! ❌❌❌")
+        }
+        
+        print("💱 Currency changed to: \(selectedCurrency.code) (\(selectedCurrency.name))")
+        print("💱 Currency symbol: \(selectedCurrency.symbol)")
+        
+        // Update text field symbol
+        updateCurrencySymbol()
+        
+        // Clear existing rates
+        print("🗑️  Clearing existing rates (\(self.rates.count) items)")
+        self.rates = []
+        self.rateCollection.reloadData()
+        
+        // Update forex rate for new currency
+        print("📡 Calling updateForexRate()...")
+        updateForexRate()
+        
+        // Fetch new rates for selected currency
+        print("📡 Calling getRates()...")
+        self.getRates { (result) in
+            switch result {
+            case .Success(let data):
+                print("✅ Successfully loaded \(data.count) providers for \(selectedCurrency.code)")
+                print("✅ First 3 rates: \(data.prefix(3).map { "\($0.currency): \($0.rate)" }.joined(separator: ", "))")
+                // Save to Core Data
+                CoreDataStack.saveInCoreDataWith(array: data)
+                print("🔄 ========== CURRENCY CHANGE COMPLETED ==========\n")
+            case .Error(let errorMessage):
+                print("❌ Error loading rates for \(selectedCurrency.code): \(errorMessage)")
+                print("🔄 ========== CURRENCY CHANGE FAILED ==========\n")
+                DispatchQueue.main.async {
+                    // Show error alert
+                    let alert = UIAlertController(
+                        title: "Error Loading Rates",
+                        message: "Could not load rates for \(selectedCurrency.name). Please check your internet connection.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
+    }
+    
+    func updateCurrencySymbol() {
+        let currency = CurrencyManager.shared.selectedCurrency
+        var string = mainTextField.text!
+        // Remove all currency symbols
+        string = string.replacingOccurrences(of: "$", with: "")
+        string = string.replacingOccurrences(of: "£", with: "")
+        string = string.replacingOccurrences(of: "€", with: "")
+        string = string.replacingOccurrences(of: "C$", with: "")
+        string = string.replacingOccurrences(of: "A$", with: "")
+        string = string.replacingOccurrences(of: "S$", with: "")
+        
+        if string.isEmpty {
+            string = "1.00"
+        }
+        mainTextField.attributedText =  "^{\(currency.symbol)}\(string)".superscripted(font: UIFont(name: .regularFont, size: 64) ?? UIFont.systemFont(ofSize: 42, weight: .medium))
     }
     
     
@@ -149,6 +274,7 @@ class MainVC: UIViewController {
         
         historyButton.titleLabel?.textAlignment = .left
         
+        view.addSubview(currencySegmentControl)
         view.addSubview(firstContainerView)
         view.addSubview(rateCollection)
         view.addSubview(disclaimerLabel)
@@ -157,6 +283,12 @@ class MainVC: UIViewController {
         firstContainerView.addSubview(historyButton)
         firstContainerView.addSubview(mainTextField)
         firstContainerView.addSubview(tapToEditLabel)
+        
+        // Currency Selector Constraints
+        currencySegmentControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8).isActive = true
+        currencySegmentControl.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
+        currencySegmentControl.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
+        currencySegmentControl.heightAnchor.constraint(equalToConstant: 32).isActive = true
         
         priceLabel.leftAnchor.constraint(equalTo: firstContainerView.leftAnchor, constant: 8).isActive = true
         priceLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true
@@ -169,7 +301,7 @@ class MainVC: UIViewController {
         backGroundView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
         backGroundView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
         backGroundView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
-        backGroundView.heightAnchor.constraint(equalToConstant: 300).isActive = true
+        backGroundView.bottomAnchor.constraint(equalTo: firstContainerView.bottomAnchor, constant: 20).isActive = true
         
         noDataLabel.isHidden = true
         noDataLabel.centerXAnchor.constraint(equalTo: rateCollection.centerXAnchor, constant: 0).isActive = true
@@ -179,7 +311,7 @@ class MainVC: UIViewController {
         
         noDataLabel.heightAnchor.constraint(equalToConstant: 140).isActive = true
         
-        firstContainerView.topAnchor.constraint(equalTo: view.topAnchor,constant: 40).isActive = true
+        firstContainerView.topAnchor.constraint(equalTo: currencySegmentControl.bottomAnchor, constant: 12).isActive = true
         firstContainerView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
         firstContainerView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
         firstContainerView.heightAnchor.constraint(equalToConstant: 200).isActive = true
@@ -239,39 +371,49 @@ class MainVC: UIViewController {
         mainTextField.delegate = self
         mainTextField.returnKeyType = UIReturnKeyType.done
         
+        // Set initial currency selection
+        let savedCurrency = CurrencyManager.shared.selectedCurrency
+        if let index = Currency.allCurrencies.firstIndex(where: { $0.code == savedCurrency.code }) {
+            currencySegmentControl.selectedSegmentIndex = index
+        }
+        updateCurrencySymbol()
+        
         NotificationCenter.default.addObserver(self, selector: #selector(self.updateViewLayout), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
         self.updateCollectionViewData()
     }
     
     func updateCollectionViewData() {
+        let currency = CurrencyManager.shared.selectedCurrency
         
-        let remittanceObjects = CoreDataStack.getCoreDataObjects()
-        let currentDayObjects = CoreDataStack.checkCurrentDataObjects(objects: remittanceObjects)
-        
-        if currentDayObjects.count > 0 {
-            self.rates = currentDayObjects.compactMap({ Rate(currency: $0.currancy ?? "unknown", rate: $0.rate, dateString: $0.dateString ?? "", forexRate: $0.forexRate ?? "")})
-            
-            self.rates = self.rates.sorted(by: { $0.rate > $1.rate })
-            
-            self.priceLabel.attributedText =  "  Forex: ^{$}\(self.rates.first?.forexRate ?? "")  ".superscripted(font: UIFont.systemFont(ofSize: 18, weight: .medium))
-            
-            if self.priceLabel.text?.count ?? 0 <= 0 {
-                updateForexRate()
-            }
-            
-            self.rateCollection.reloadData()
-            return
-        }
-        
+        // Always fetch fresh data for the current currency instead of using cached Core Data
+        // This ensures we get rates specific to the selected currency
         self.getRates { (result) in
             switch result {
             case .Success(let data):
                 CoreDataStack.saveInCoreDataWith(array: data)
-            case .Error(_):
-                DispatchQueue.main.async {
+                print("✅ Updated collection view with \(data.count) \(currency.code) rates")
+            case .Error(let errorMessage):
+                print("❌ Error updating collection view: \(errorMessage)")
+                
+                // Fallback to Core Data if API fails
+                let remittanceObjects = CoreDataStack.getCoreDataObjects()
+                let currentDayObjects = CoreDataStack.checkCurrentDataObjects(objects: remittanceObjects)
+                
+                if currentDayObjects.count > 0 {
+                    self.rates = currentDayObjects.compactMap({ Rate(currency: $0.currancy ?? "unknown", rate: $0.rate, dateString: $0.dateString ?? "", forexRate: $0.forexRate ?? "")})
+                    self.rates = self.rates.sorted(by: { $0.rate > $1.rate })
+                    
+                    DispatchQueue.main.async {
+                        self.priceLabel.attributedText = "  Forex: ^{\(currency.symbol)}\(self.rates.first?.forexRate ?? "")  ".superscripted(font: UIFont.systemFont(ofSize: 18, weight: .medium))
+                        self.rateCollection.reloadData()
+                    }
+                    print("⚠️ Using cached Core Data rates (offline)")
                 }
             }
         }
+        
+        // Always update forex rate for current currency
+        updateForexRate()
     }
     
     override func viewWillDisappear(_ animated: Bool) {

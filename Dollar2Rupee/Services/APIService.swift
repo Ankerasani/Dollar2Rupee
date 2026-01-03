@@ -15,8 +15,8 @@ class APIService {
     // MARK: - Configuration
     
     /// Base URL for your Vercel deployment
-    /// Production URL from Vercel deployment
-    static let baseURL = "https://dollar2rupee-91pkmxcb2-newsapps-projects-60e3aa11.vercel.app"
+    /// Production URL (stable, auto-updates with new deployments)
+    static let baseURL = "https://dollar2rupee-api.vercel.app"
     
     // Endpoints
     private static let ratesEndpoint = "\(baseURL)/api/rates"
@@ -26,17 +26,19 @@ class APIService {
     
     /**
      Fetch all remittance rates with comprehensive error handling
+     - Parameter currency: Source currency code (USD, GBP, EUR, etc.)
      - Parameter completion: Returns Result with array of Rate objects or error message
      */
-    static func fetchRates(completion: @escaping (Result<[Rate]>) -> Void) {
+    static func fetchRates(currency: String = "USD", completion: @escaping (Result<[Rate]>) -> Void) {
         
-        guard let url = URL(string: ratesEndpoint) else {
-            print("❌ Invalid API URL: \(ratesEndpoint)")
+        let urlString = "\(ratesEndpoint)?currency=\(currency)"
+        guard let url = URL(string: urlString) else {
+            print("❌ Invalid API URL: \(urlString)")
             completion(.Error("Invalid API URL. Please check configuration."))
             return
         }
         
-        print("📡 Fetching rates from: \(ratesEndpoint)")
+        print("📡 Fetching rates from: \(urlString)")
         
         Alamofire.request(url, method: .get)
             .validate(statusCode: 200..<300)
@@ -146,17 +148,19 @@ class APIService {
     
     /**
      Fetch forex rate only
+     - Parameter currency: Source currency code (USD, GBP, EUR, etc.)
      - Parameter completion: Returns forex rate as Double or nil
      */
-    static func fetchForexRate(completion: @escaping (Double?) -> Void) {
+    static func fetchForexRate(currency: String = "USD", completion: @escaping (Double?) -> Void) {
         
-        guard let url = URL(string: forexEndpoint) else {
+        let urlString = "\(forexEndpoint)?currency=\(currency)"
+        guard let url = URL(string: urlString) else {
             print("❌ Invalid forex URL")
             completion(nil)
             return
         }
         
-        print("📡 Fetching forex rate from: \(forexEndpoint)")
+        print("📡 Fetching forex rate from: \(urlString)")
         
         Alamofire.request(url, method: .get)
             .validate(statusCode: 200..<300)
@@ -196,10 +200,11 @@ class APIService {
     
     /**
      Force refresh rates (bypass cache)
+     - Parameter currency: Source currency code (USD, GBP, EUR, etc.)
      - Parameter completion: Returns Result with array of Rate objects or error
      */
-    static func forceRefreshRates(completion: @escaping (Result<[Rate]>) -> Void) {
-        let refreshURL = "\(ratesEndpoint)?refresh=true"
+    static func forceRefreshRates(currency: String = "USD", completion: @escaping (Result<[Rate]>) -> Void) {
+        let refreshURL = "\(ratesEndpoint)?currency=\(currency)&refresh=true"
         
         guard let url = URL(string: refreshURL) else {
             print("❌ Invalid refresh URL")
@@ -207,7 +212,7 @@ class APIService {
             return
         }
         
-        print("🔄 Force refreshing rates...")
+        print("🔄 Force refreshing rates for \(currency)...")
         
         Alamofire.request(url, method: .get)
             .validate(statusCode: 200..<300)

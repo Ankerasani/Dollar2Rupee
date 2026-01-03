@@ -3,16 +3,18 @@
 const { getAllRates } = require('../scrapers/wiseComparison');
 
 // In-memory cache (for simple deployment)
-// For production, use Redis or a database
-let cachedRates = null;
-let lastUpdate = null;
+// Cache by currency pair: "USD-INR", "GBP-INR", etc.
+const cache = {};
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+// Supported currencies
+const SUPPORTED_CURRENCIES = ['USD', 'GBP', 'EUR', 'CAD', 'AUD', 'SGD'];
 
 /**
  * Main API endpoint - Provider Remittance Rates
- * GET /api/rates
+ * GET /api/rates?currency=USD
  * 
- * Data source: Wise Comparison API (real-time rates from 9+ providers)
+ * Data source: Wise Comparison API (real-time rates from multiple providers)
  */
 module.exports = async (req, res) => {
   // Enable CORS
@@ -31,28 +33,42 @@ module.exports = async (req, res) => {
   try {
     const now = Date.now();
     const forceRefresh = req.query.refresh === 'true';
+    const sourceCurrency = (req.query.currency || 'USD').toUpperCase();
+    
+    // Validate currency
+    if (!SUPPORTED_CURRENCIES.includes(sourceCurrency)) {
+      return res.status(400).json({
+        success: false,
+        error: `Currency not supported: ${sourceCurrency}`,
+        supported: SUPPORTED_CURRENCIES
+      });
+    }
+    
+    const cacheKey = `${sourceCurrency}-INR`;
     
     // Check if cache is valid
-    if (!forceRefresh && cachedRates && lastUpdate && (now - lastUpdate < CACHE_DURATION)) {
-      console.log('Serving cached rates');
+    if (!forceRefresh && cache[cacheKey] && (now - cache[cacheKey].timestamp < CACHE_DURATION)) {
+      console.log(`Serving cached rates for ${cacheKey}`);
       return res.status(200).json({
-        ...cachedRates,
+        ...cache[cacheKey].data,
         cached: true,
-        cacheAge: Math.floor((now - lastUpdate) / 1000) + ' seconds'
+        cacheAge: Math.floor((now - cache[cacheKey].timestamp) / 1000) + ' seconds'
       });
     }
     
     // Fetch fresh data from Wise Comparison API
-    console.log('Fetching fresh rates from Wise API...');
-    const data = await getAllRates();
+    console.log(`Fetching fresh rates for ${cacheKey}...`);
+    const data = await getAllRates(sourceCurrency);
     
     if (!data.success) {
-      throw new Error('Failed to fetch rates from Wise API');
+      throw new Error(`Failed to fetch rates for ${sourceCurrency}`);
     }
     
     // Update cache
-    cachedRates = data;
-    lastUpdate = now;
+    cache[cacheKey] = {
+      data: data,
+      timestamp: now
+    };
     
     return res.status(200).json({
       ...data,
@@ -62,10 +78,13 @@ module.exports = async (req, res) => {
   } catch (error) {
     console.error('API Error:', error);
     
+    const sourceCurrency = (req.query.currency || 'USD').toUpperCase();
+    const cacheKey = `${sourceCurrency}-INR`;
+    
     // Return cached data if available, even if expired
-    if (cachedRates) {
+    if (cache[cacheKey]) {
       return res.status(200).json({
-        ...cachedRates,
+        ...cache[cacheKey].data,
         cached: true,
         warning: 'Serving stale cache due to API error'
       });

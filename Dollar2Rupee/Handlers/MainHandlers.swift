@@ -72,22 +72,37 @@ extension MainVC {
     }
     
     public func updateForexRate() {
-        APIService.fetchForexRate { forexRate in
+        let currency = CurrencyManager.shared.selectedCurrency
+        print("  📍 updateForexRate() - CurrencyManager currency: \(currency.code)")
+        
+        APIService.fetchForexRate(currency: currency.code) { forexRate in
             guard let rate = forexRate else {
-                print("❌ Failed to fetch forex rate")
+                print("  ❌ Failed to fetch forex rate for \(currency.code)")
                 return
             }
             
+            print("  ✅ Fetched forex rate: \(rate) for \(currency.code)")
+            
             DispatchQueue.main.async {
-                self.priceLabel.attributedText = "  Forex: ^{$}\(String(format: "%.2f", rate))  ".superscripted(font: UIFont.systemFont(ofSize: 18, weight: .medium))
+                let labelText = "  Forex: ^{\(currency.symbol)}\(String(format: "%.2f", rate))  "
+                print("  📝 Setting priceLabel to: \(labelText.replacingOccurrences(of: "^{", with: "").replacingOccurrences(of: "}", with: ""))")
+                self.priceLabel.attributedText = labelText.superscripted(font: UIFont.systemFont(ofSize: 18, weight: .medium))
             }
         }
     }
     
     public func getRates(completion: @escaping (Result<[Rate]>) -> Void) {
-        APIService.fetchRates { result in
+        let currency = CurrencyManager.shared.selectedCurrency
+        print("  📍 getRates() - CurrencyManager currency: \(currency.code)")
+        
+        APIService.fetchRates(currency: currency.code) { result in
             switch result {
             case .Success(let rates):
+                print("  ✅ APIService returned \(rates.count) rates for \(currency.code)")
+                if rates.count > 0 {
+                    print("  📊 First rate: \(rates[0].currency) = \(rates[0].rate)")
+                }
+                
                 self.rates = rates
                 
                 // Filter unwanted elements
@@ -96,16 +111,17 @@ extension MainVC {
                 // Sort by rate (highest first)
                 self.rates = self.rates.sorted(by: { $0.rate > $1.rate })
                 
-                print("✅ Successfully processed \(self.rates.count) rates")
+                print("  ✅ Successfully processed \(self.rates.count) rates for \(currency.code)")
                 
                 // Update UI on main thread
                 DispatchQueue.main.async {
+                    print("  🔄 Calling rateCollection.reloadData()")
                     self.rateCollection.reloadData()
                     completion(.Success(self.rates))
                 }
                 
             case .Error(let errorMessage):
-                print("❌ Error fetching rates: \(errorMessage)")
+                print("  ❌ Error fetching rates for \(currency.code): \(errorMessage)")
                 DispatchQueue.main.async {
                     completion(.Error(errorMessage))
                 }
@@ -114,11 +130,11 @@ extension MainVC {
     }
     
     func openBrowser (urlString: String) {
-        // Get the provider URL
+        // Get the provider website URL
         let providerURL = Constants.APPStoreURLs.valueByPropertyName(provider: urlString)
         
         // Check if URL is empty
-        guard !providerURL.isEmpty, let url = URL(string: providerURL) else {
+        guard !providerURL.isEmpty else {
             // Show alert that provider link is not available
             let alert = UIAlertController(
                 title: "Link Not Available",
@@ -130,64 +146,30 @@ extension MainVC {
             return
         }
         
-        // Try to open the provider's app if installed (for deep links like "xoom://")
-        if url.scheme != "http" && url.scheme != "https" {
-            if UIApplication.shared.canOpenURL(url) {
-                // Open in the provider's installed app
-                UIApplication.shared.open(url, options: [:], completionHandler: nil)
-            } else {
-                // App not installed, show alert
-                let alert = UIAlertController(
-                    title: "App Not Installed",
-                    message: "\(urlString) app is not installed. Would you like to visit the App Store?",
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-                alert.addAction(UIAlertAction(title: "App Store", style: .default) { _ in
-                    // You'll need to add actual App Store URLs to your Constants
-                    if let appStoreURL = URL(string: providerURL) {
-                        UIApplication.shared.open(appStoreURL, options: [:])
-                    }
-                })
-                present(alert, animated: true)
-            }
-        } else {
-            // Open in Safari View Controller (in-app Safari with visible controls)
-            let safariVC = SFSafariViewController(url: url)
-            safariVC.preferredControlTintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
-            safariVC.dismissButtonStyle = .close
-            present(safariVC, animated: true, completion: nil)
-        }
-    }
-    
-    func getAPPInstallationInformation (urlString: String) {
+        // Get the deep link URL scheme for the provider (if available)
+        let deepLinkURL = Constants.APPDeepLinks.valueByPropertyName(provider: urlString)
         
-        var constructedURLString = ""
-        if urlString == "icicimoney2india" || urlString == "icicibankmoney2India" {
-            self.openURL(urlString: Constants.APPStoreURLs.icici)
-            return
-        } else if urlString == "remitmoney" {
-            self.openURL(urlString: Constants.APPStoreURLs.remitmoney)
+        // First, try to open the provider's app using deep link (if available)
+        if !deepLinkURL.isEmpty, let appURL = URL(string: deepLinkURL) {
+            if UIApplication.shared.canOpenURL(appURL) {
+                // App is installed, open it directly
+                print("✅ Opening \(urlString) app with deep link: \(deepLinkURL)")
+                UIApplication.shared.open(appURL, options: [:], completionHandler: nil)
+                return
+            }
+        }
+        
+        // App not installed or no deep link available, open website in Safari View Controller
+        guard let url = URL(string: providerURL) else {
+            print("❌ Invalid URL: \(providerURL)")
             return
         }
         
-        constructedURLString = Constants.appStoreURL(appID:Constants.APPStoreURLs.valueByPropertyName(provider: urlString))
-        
-        if let url = URL(string: "\(urlString)://"), UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
-        } else {
-            self.openURL(urlString: constructedURLString)
-        }
-    }
-    
-    func openURL(urlString: String) {
-        if let itunesUrl = URL(string: urlString) , UIApplication.shared.canOpenURL(itunesUrl) {
-            if #available(iOS 10.0, *) {
-                UIApplication.shared.open(itunesUrl, options: [:], completionHandler: nil)
-            } else {
-                UIApplication.shared.openURL(itunesUrl)
-            }
-        }
+        print("🌐 Opening \(urlString) website: \(providerURL)")
+        let safariVC = SFSafariViewController(url: url)
+        safariVC.preferredControlTintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
+        safariVC.dismissButtonStyle = .close
+        present(safariVC, animated: true, completion: nil)
     }
 }
 

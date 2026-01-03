@@ -2,15 +2,17 @@
 // Using Wise API (mid-market rate) as primary, Frankfurter as fallback
 const { getForexRate } = require('../scrapers/wiseComparison');
 
-let cachedForex = null;
-let lastUpdate = null;
+// Cache by currency: "USD", "GBP", etc.
+const cache = {};
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour (forex changes less frequently)
+
+const SUPPORTED_CURRENCIES = ['USD', 'GBP', 'EUR', 'CAD', 'AUD', 'SGD'];
 
 /**
  * Forex Rate API Endpoint
- * GET /api/forex
+ * GET /api/forex?currency=USD
  * 
- * Returns the mid-market USD to INR exchange rate
+ * Returns the mid-market rate to INR for specified currency
  * Primary source: Wise API (true mid-market rate)
  * Fallback: Frankfurter API
  */
@@ -29,23 +31,35 @@ module.exports = async (req, res) => {
   try {
     const now = Date.now();
     const forceRefresh = req.query.refresh === 'true';
+    const sourceCurrency = (req.query.currency || 'USD').toUpperCase();
     
-    if (!forceRefresh && cachedForex && lastUpdate && (now - lastUpdate < CACHE_DURATION)) {
+    // Validate currency
+    if (!SUPPORTED_CURRENCIES.includes(sourceCurrency)) {
+      return res.status(400).json({
+        success: false,
+        error: `Currency not supported: ${sourceCurrency}`,
+        supported: SUPPORTED_CURRENCIES
+      });
+    }
+    
+    if (!forceRefresh && cache[sourceCurrency] && (now - cache[sourceCurrency].timestamp < CACHE_DURATION)) {
       return res.status(200).json({
         success: true,
-        ...cachedForex,
+        ...cache[sourceCurrency].data,
         cached: true
       });
     }
     
-    const forexData = await getForexRate();
+    const forexData = await getForexRate(sourceCurrency);
     
     if (!forexData) {
-      throw new Error('Failed to fetch forex rate');
+      throw new Error(`Failed to fetch forex rate for ${sourceCurrency}`);
     }
     
-    cachedForex = forexData;
-    lastUpdate = now;
+    cache[sourceCurrency] = {
+      data: forexData,
+      timestamp: now
+    };
     
     return res.status(200).json({
       success: true,
@@ -56,10 +70,12 @@ module.exports = async (req, res) => {
   } catch (error) {
     console.error('Forex API Error:', error);
     
-    if (cachedForex) {
+    const sourceCurrency = (req.query.currency || 'USD').toUpperCase();
+    
+    if (cache[sourceCurrency]) {
       return res.status(200).json({
         success: true,
-        ...cachedForex,
+        ...cache[sourceCurrency].data,
         cached: true,
         warning: 'Serving stale cache'
       });

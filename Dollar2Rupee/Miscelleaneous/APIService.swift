@@ -26,17 +26,20 @@ class APIService {
     
     /**
      Fetch all remittance rates with comprehensive error handling
+     - Parameter currency: Source currency code (USD, GBP, EUR, etc.)
      - Parameter completion: Returns Result with array of Rate objects or error message
      */
-    static func fetchRates(completion: @escaping (Result<[Rate]>) -> Void) {
+    static func fetchRates(currency: String = "USD", completion: @escaping (Result<[Rate]>) -> Void) {
         
-        guard let url = URL(string: ratesEndpoint) else {
-            print("❌ Invalid API URL: \(ratesEndpoint)")
+        let endpoint = "\(baseURL)/api/rates?currency=\(currency)"
+        
+        guard let url = URL(string: endpoint) else {
+            print("❌ Invalid API URL: \(endpoint)")
             completion(.Error("Invalid API URL. Please check configuration."))
             return
         }
         
-        print("📡 Fetching rates from: \(ratesEndpoint)")
+        print("📡 Fetching rates from: \(endpoint)")
         
         Alamofire.request(url, method: .get)
             .validate(statusCode: 200..<300)
@@ -146,17 +149,20 @@ class APIService {
     
     /**
      Fetch forex rate only
+     - Parameter currency: Source currency code (USD, GBP, EUR, etc.)
      - Parameter completion: Returns forex rate as Double or nil
      */
-    static func fetchForexRate(completion: @escaping (Double?) -> Void) {
+    static func fetchForexRate(currency: String = "USD", completion: @escaping (Double?) -> Void) {
         
-        guard let url = URL(string: forexEndpoint) else {
+        let endpoint = "\(baseURL)/api/forex?currency=\(currency)"
+        
+        guard let url = URL(string: endpoint) else {
             print("❌ Invalid forex URL")
             completion(nil)
             return
         }
         
-        print("📡 Fetching forex rate from: \(forexEndpoint)")
+        print("📡 Fetching forex rate from: \(endpoint)")
         
         Alamofire.request(url, method: .get)
             .validate(statusCode: 200..<300)
@@ -196,10 +202,11 @@ class APIService {
     
     /**
      Force refresh rates (bypass cache)
+     - Parameter currency: Source currency code (USD, GBP, EUR, etc.)
      - Parameter completion: Returns Result with array of Rate objects or error
      */
-    static func forceRefreshRates(completion: @escaping (Result<[Rate]>) -> Void) {
-        let refreshURL = "\(ratesEndpoint)?refresh=true"
+    static func forceRefreshRates(currency: String = "USD", completion: @escaping (Result<[Rate]>) -> Void) {
+        let refreshURL = "\(baseURL)/api/rates?currency=\(currency)&refresh=true"
         
         guard let url = URL(string: refreshURL) else {
             print("❌ Invalid refresh URL")

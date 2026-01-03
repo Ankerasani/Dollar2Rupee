@@ -12,7 +12,7 @@ class RateCell: UICollectionViewCell {
     
     let remittanceImage = MainImageView(imageName: "")
 
-    let doneButton    = MainButton(text: " VIEW OFFER ")
+    let doneButton    = MainButton(text: "VIEW OFFER", font: UIFont.systemFont(ofSize: 11, weight: .semibold))
 
     let regularRate = MainLabel(text: "", textAligment: .left, numberOfLines: 1,color: UIColor.black, font: UIFont(name: .liteFont, size: 12))
     let currencyRate = MainLabel(text: "", textAligment: .left, numberOfLines: 1,color: #colorLiteral(red: 0.4192152619, green: 0.6452817321, blue: 0.2875428498, alpha: 1))
@@ -42,7 +42,7 @@ class RateCell: UICollectionViewCell {
         
         doneButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
         doneButton.rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: -10).isActive = true
-        doneButton.widthAnchor.constraint(equalToConstant: 60).isActive = true
+        doneButton.widthAnchor.constraint(equalToConstant: 100).isActive = true
         doneButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         doneButton.addTarget(self, action: #selector(handleSendButton), for: .allEvents)
     }

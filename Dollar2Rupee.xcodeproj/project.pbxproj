@@ -10,6 +10,9 @@
 		266A676B2F08FAE600A1EBEA /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676A2F08FAE600A1EBEA /* APIService.swift */; };
 		266A676C2F08FAE600A1EBEA /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676A2F08FAE600A1EBEA /* APIService.swift */; };
 		266A676D2F08FAE600A1EBEA /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676A2F08FAE600A1EBEA /* APIService.swift */; };
+		266A676F2F0913E100A1EBEA /* Currency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676E2F0913E100A1EBEA /* Currency.swift */; };
+		266A67702F0913E100A1EBEA /* Currency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676E2F0913E100A1EBEA /* Currency.swift */; };
+		266A67712F0913E100A1EBEA /* Currency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266A676E2F0913E100A1EBEA /* Currency.swift */; };
 		BBF81E8DF93DE536378CC580 /* Pods_Dollar2RupeeTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CF6286C4FFD854D23F4FB2F /* Pods_Dollar2RupeeTests.framework */; };
 		C062571F2141639E002F9621 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C062571E2141639E002F9621 /* AppDelegate.swift */; };
 		C06257242141639E002F9621 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C06257222141639E002F9621 /* Main.storyboard */; };
@@ -80,6 +83,7 @@
 /* Begin PBXFileReference section */
 		22510FA53E7F34EDF2CF61D4 /* Pods-Dollar2Rupee.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Dollar2Rupee.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Dollar2Rupee/Pods-Dollar2Rupee.debug.xcconfig"; sourceTree = "<group>"; };
 		266A676A2F08FAE600A1EBEA /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		266A676E2F0913E100A1EBEA /* Currency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Currency.swift; sourceTree = "<group>"; };
 		2CF6286C4FFD854D23F4FB2F /* Pods_Dollar2RupeeTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Dollar2RupeeTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		73796442E6EBD20F1001DAC2 /* Pods-Dollar2RupeeTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Dollar2RupeeTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-Dollar2RupeeTests/Pods-Dollar2RupeeTests.release.xcconfig"; sourceTree = "<group>"; };
 		B3D6B92B36B9A6A6C29C1CDD /* Pods_Dollar2Rupee.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Dollar2Rupee.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -268,6 +272,7 @@
 			children = (
 				C062575B214163D3002F9621 /* CurrencyModel.swift */,
 				DE259D592218BFFE005CCD3E /* Provider.swift */,
+				266A676E2F0913E100A1EBEA /* Currency.swift */,
 				C062575C214163D3002F9621 /* MenuModel.swift */,
 			);
 			path = Models;
@@ -546,6 +551,7 @@
 				C0625779214163D3002F9621 /* MainLabel.swift in Sources */,
 				C0C3514D21453F3C0097AD4C /* MainScrollView.swift in Sources */,
 				C062576B214163D3002F9621 /* ColorExt.swift in Sources */,
+				266A67702F0913E100A1EBEA /* Currency.swift in Sources */,
 				C0625771214163D3002F9621 /* CurrencyModel.swift in Sources */,
 				C0625783214168F4002F9621 /* NavigationVC.swift in Sources */,
 				DE442B07225482BD00460ECA /* Remittance+CoreDataClass copy.swift in Sources */,
@@ -582,6 +588,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				266A676F2F0913E100A1EBEA /* Currency.swift in Sources */,
 				266A676D2F08FAE600A1EBEA /* APIService.swift in Sources */,
 				C06257372141639F002F9621 /* Dollar2RupeeTests.swift in Sources */,
 			);
@@ -591,6 +598,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				266A67712F0913E100A1EBEA /* Currency.swift in Sources */,
 				266A676C2F08FAE600A1EBEA /* APIService.swift in Sources */,
 				C06257422141639F002F9621 /* Dollar2RupeeUITests.swift in Sources */,
 			);

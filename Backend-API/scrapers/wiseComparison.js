@@ -21,33 +21,31 @@ const EMERGENCY_RATES = {
     { provider: 'moneygram', rate: 89.50, source: 'emergency-static' },
     { provider: 'instarem', rate: 89.55, source: 'emergency-static' },
     { provider: 'xoom', rate: 89.10, source: 'emergency-static' },
-    { provider: 'remit2india', rate: 87.20, source: 'emergency-static' },
-    { provider: 'westernunion', rate: 85.80, source: 'emergency-static' },
+    { provider: 'westernunion', rate: 89.73, source: 'emergency-static' },  // Updated with real rate
     { provider: 'ria', rate: 85.50, source: 'emergency-static' },
-    { provider: 'remitmoney', rate: 86.20, source: 'emergency-static' },
-    { provider: 'transfast', rate: 86.00, source: 'emergency-static' },
     { provider: 'ofx', rate: 87.00, source: 'emergency-static' }
   ]
 };
 
 /**
  * Fetch real remittance rates from Wise Comparison API
+ * @param {string} sourceCurrency - Source currency code (USD, GBP, EUR, etc.)
  */
-async function fetchWiseComparison() {
+async function fetchWiseComparison(sourceCurrency = 'USD') {
   try {
-    console.log('📡 [PRIMARY] Fetching from Wise Comparison API...');
+    console.log(`📡 [PRIMARY] Fetching from Wise Comparison API (${sourceCurrency} → INR)...`);
     
     const response = await axios.get(
       'https://api.wise.com/v4/comparisons',
       {
         params: {
-          sourceCurrency: 'USD',
+          sourceCurrency: sourceCurrency,
           targetCurrency: 'INR',
           sendAmount: 1000
         },
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Dollar2Rupee/1.0'
+          'User-Agent': 'RemittanceCompare/1.0'
         },
         timeout: 15000
       }
@@ -117,12 +115,13 @@ async function fetchWiseComparison() {
 
 /**
  * Get forex rate with fallback
+ * @param {string} sourceCurrency - Source currency code (USD, GBP, EUR, etc.)
  */
-async function getForexRate() {
+async function getForexRate(sourceCurrency = 'USD') {
   try {
     // Try 1: Get from Wise Comparison (most accurate mid-market rate)
-    console.log('📡 [PRIMARY] Fetching forex from Wise API...');
-    const wiseComparison = await fetchWiseComparison();
+    console.log(`📡 [PRIMARY] Fetching forex from Wise API (${sourceCurrency} → INR)...`);
+    const wiseComparison = await fetchWiseComparison(sourceCurrency);
     
     if (wiseComparison.success) {
       const wiseRate = wiseComparison.rates.find(r => r.provider === 'transferwise' && r.isMidMarket);
@@ -137,8 +136,8 @@ async function getForexRate() {
     }
     
     // Try 2: Fallback to Frankfurter
-    console.log('📡 [FALLBACK] Fetching forex from Frankfurter API...');
-    const response = await axios.get('https://api.frankfurter.app/latest?from=USD&to=INR', {
+    console.log(`📡 [FALLBACK] Fetching forex from Frankfurter API (${sourceCurrency} → INR)...`);
+    const response = await axios.get(`https://api.frankfurter.app/latest?from=${sourceCurrency}&to=INR`, {
       timeout: 10000,
       headers: {
         'User-Agent': 'Dollar2Rupee/1.0'
@@ -177,13 +176,10 @@ function calculateAllRatesFromForex(forexRate) {
   const providerMargins = {
     'transferwise': -3.0,
     'xoom': -3.5,
-    'remit2india': -2.8,
-    'westernunion': -4.2,
+    'westernunion': -0.28,    // Updated based on real data: 89.73 INR
     'remitly': -3.3,
     'instarem': -3.4,
     'ria': -4.5,
-    'remitmoney': -3.8,
-    'transfast': -4.0,
     'statebank': -3.5,
     'ofx': -3.9,
     'moneygram': -3.6
@@ -211,8 +207,8 @@ function calculateAllRatesFromForex(forexRate) {
  * Calculate rates for missing providers
  */
 function calculateMissingRates(forexRate, existingProviders) {
-  const allProviders = ['transferwise', 'xoom', 'remit2india', 'westernunion', 'remitly', 
-                        'instarem', 'ria', 'remitmoney', 'transfast', 'statebank', 'ofx', 'moneygram'];
+  const allProviders = ['transferwise', 'xoom', 'westernunion', 'remitly', 
+                        'instarem', 'ria', 'statebank', 'ofx', 'moneygram'];
   
   const missingProviders = allProviders.filter(p => !existingProviders.includes(p));
   
@@ -225,13 +221,10 @@ function calculateMissingRates(forexRate, existingProviders) {
   const providerMargins = {
     'transferwise': -3.0,
     'xoom': -3.5,
-    'remit2india': -2.8,
-    'westernunion': -4.2,
+    'westernunion': -0.28,    // Updated based on real data: 89.73 INR (90.01 - 0.28)
     'remitly': -3.3,
     'instarem': -3.4,
     'ria': -4.5,
-    'remitmoney': -3.8,
-    'transfast': -4.0,
     'statebank': -3.5,
     'ofx': -3.9,
     'moneygram': -3.6
@@ -259,20 +252,21 @@ function calculateMissingRates(forexRate, existingProviders) {
 
 /**
  * Main function with comprehensive fallback strategy
+ * @param {string} sourceCurrency - Source currency code (USD, GBP, EUR, etc.)
  */
-async function getAllRates() {
-  console.log('🔍 FETCHING RATES WITH FALLBACK STRATEGY\n');
+async function getAllRates(sourceCurrency = 'USD') {
+  console.log(`🔍 FETCHING RATES WITH FALLBACK STRATEGY (${sourceCurrency} → INR)\n`);
   console.log('='.repeat(70));
   console.log('Strategy: Wise API → Calculated → Cache → Emergency Static\n');
   console.log('='.repeat(70) + '\n');
   
   try {
     // STEP 1: Try Wise Comparison API
-    const wiseData = await fetchWiseComparison();
+    const wiseData = await fetchWiseComparison(sourceCurrency);
     
     if (wiseData.success && wiseData.rates.length > 0) {
       // Wise API worked! Get forex and calculate missing providers
-      const forexRate = await getForexRate();
+      const forexRate = await getForexRate(sourceCurrency);
       const existingProviders = wiseData.rates.map(r => r.provider);
       const calculatedRates = calculateMissingRates(forexRate.rate, existingProviders);
       const allRates = [...wiseData.rates, ...calculatedRates];
@@ -295,13 +289,15 @@ async function getAllRates() {
           calculated: calculatedRates.length,
           emergency: 0
         },
-        fallbackLevel: 'none'
+        fallbackLevel: 'none',
+        sourceCurrency: sourceCurrency,
+        targetCurrency: 'INR'
       };
     }
     
     // STEP 2: Wise API failed - Calculate all from Forex
     console.log('⚠️  Wise API failed - using Forex calculation fallback\n');
-    const forexRate = await getForexRate();
+    const forexRate = await getForexRate(sourceCurrency);
     const calculatedRates = calculateAllRatesFromForex(forexRate.rate);
     
     console.log('='.repeat(70));
@@ -322,7 +318,9 @@ async function getAllRates() {
         emergency: 0
       },
       fallbackLevel: 'forex-calculated',
-      warning: 'Wise API unavailable - all rates calculated from forex'
+      warning: 'Wise API unavailable - all rates calculated from forex',
+      sourceCurrency: sourceCurrency,
+      targetCurrency: 'INR'
     };
     
   } catch (error) {
@@ -355,7 +353,9 @@ async function getAllRates() {
         emergency: EMERGENCY_RATES.rates.length
       },
       fallbackLevel: 'emergency-static',
-      warning: 'All APIs unavailable - using emergency static rates (may be outdated)'
+      warning: 'All APIs unavailable - using emergency static rates (may be outdated)',
+      sourceCurrency: sourceCurrency,
+      targetCurrency: 'INR'
     };
   }
 }
