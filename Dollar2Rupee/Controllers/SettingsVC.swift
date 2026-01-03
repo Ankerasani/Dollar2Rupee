@@ -16,6 +16,7 @@ class SettingsVC: UIViewController {
     private let tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .insetGrouped)
         table.translatesAutoresizingMaskIntoConstraints = false
+        table.separatorStyle = .none
         if #available(iOS 13.0, *) {
             table.backgroundColor = .systemGroupedBackground
         } else {
@@ -24,52 +25,46 @@ class SettingsVC: UIViewController {
         return table
     }()
     
-    private let headerView: UIView = {
+    private let navigationBar: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
+        if #available(iOS 13.0, *) {
+            view.backgroundColor = .systemBackground
+        } else {
+            view.backgroundColor = .white
+        }
         return view
     }()
     
-    private let appIconImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        imageView.layer.cornerRadius = 20
-        imageView.layer.masksToBounds = true
-        imageView.layer.borderWidth = 3
-        imageView.layer.borderColor = UIColor.white.cgColor
-        imageView.backgroundColor = .white
+    private lazy var backButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
         
-        // Use app icon or placeholder
-        if let icon = UIImage(named: "AppIcon") {
-            imageView.image = icon
+        if #available(iOS 13.0, *) {
+            let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+            let image = UIImage(systemName: "chevron.left", withConfiguration: config)
+            button.setImage(image, for: .normal)
+            button.tintColor = .label
         } else {
-            // Placeholder
-            imageView.image = UIImage(systemName: "app.fill")
-            imageView.tintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
+            button.setTitle("←", for: .normal)
+            button.titleLabel?.font = UIFont.systemFont(ofSize: 24, weight: .medium)
+            button.setTitleColor(.black, for: .normal)
         }
         
-        return imageView
+        button.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+        return button
     }()
     
-    private let appNameLabel: UILabel = {
+    private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "Dollar2Rupee"
-        label.font = UIFont.systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .white
-        label.textAlignment = .center
-        return label
-    }()
-    
-    private let appTaglineLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "Compare. Save. Transfer."
-        label.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        label.textColor = UIColor.white.withAlphaComponent(0.9)
-        label.textAlignment = .center
+        label.text = "Settings"
+        label.font = UIFont.systemFont(ofSize: 28, weight: .bold)
+        if #available(iOS 13.0, *) {
+            label.textColor = .label
+        } else {
+            label.textColor = .black
+        }
         return label
     }()
     
@@ -132,15 +127,15 @@ class SettingsVC: UIViewController {
         
         var iconColor: UIColor {
             switch self {
-            case .dailySummary: return #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
-            case .manageAlerts: return #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 1)
-            case .email: return #colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)
-            case .twitter: return #colorLiteral(red: 0.1764705926, green: 0.4980392158, blue: 0.7568627596, alpha: 1)
-            case .website: return #colorLiteral(red: 0.9529411793, green: 0.6862745285, blue: 0.1333333403, alpha: 1)
-            case .version: return #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
-            case .rateApp: return #colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1)
-            case .privacyPolicy: return #colorLiteral(red: 0.3647058904, green: 0.06666667014, blue: 0.9686274529, alpha: 1)
-            case .termsOfService: return #colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)
+            case .dailySummary: return UIColor(red: 87/255, green: 202/255, blue: 133/255, alpha: 1.0)
+            case .manageAlerts: return UIColor(red: 240/255, green: 47/255, blue: 194/255, alpha: 1.0)
+            case .email: return UIColor(red: 99/255, green: 102/255, blue: 241/255, alpha: 1.0)
+            case .twitter: return UIColor(red: 29/255, green: 161/255, blue: 242/255, alpha: 1.0)
+            case .website: return UIColor(red: 251/255, green: 146/255, blue: 60/255, alpha: 1.0)
+            case .version: return UIColor(red: 142/255, green: 142/255, blue: 147/255, alpha: 1.0)
+            case .rateApp: return UIColor(red: 255/255, green: 204/255, blue: 0/255, alpha: 1.0)
+            case .privacyPolicy: return UIColor(red: 168/255, green: 85/255, blue: 247/255, alpha: 1.0)
+            case .termsOfService: return UIColor(red: 52/255, green: 58/255, blue: 64/255, alpha: 1.0)
             }
         }
         
@@ -175,22 +170,35 @@ class SettingsVC: UIViewController {
         setupUI()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Hide navigation bar
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Show navigation bar when leaving
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+    }
+    
     // MARK: - Setup
     
     private func setupUI() {
-        title = "Settings"
-        
         if #available(iOS 13.0, *) {
             view.backgroundColor = .systemGroupedBackground
         } else {
             view.backgroundColor = UIColor(red: 0.95, green: 0.95, blue: 0.97, alpha: 1.0)
         }
         
-        // Add header view
-        view.addSubview(headerView)
-        headerView.addSubview(appIconImageView)
-        headerView.addSubview(appNameLabel)
-        headerView.addSubview(appTaglineLabel)
+        // Add navigation bar
+        view.addSubview(navigationBar)
+        navigationBar.addSubview(backButton)
+        navigationBar.addSubview(titleLabel)
         
         // Add table view
         view.addSubview(tableView)
@@ -198,39 +206,34 @@ class SettingsVC: UIViewController {
         tableView.dataSource = self
         tableView.register(SettingsCell.self, forCellReuseIdentifier: "SettingsCell")
         
-        // Header Constraints
+        // Navigation Bar Constraints
         NSLayoutConstraint.activate([
-            headerView.topAnchor.constraint(equalTo: view.topAnchor),
-            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            headerView.heightAnchor.constraint(equalToConstant: 200),
+            navigationBar.topAnchor.constraint(equalTo: view.topAnchor),
+            navigationBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            navigationBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            navigationBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 60),
             
-            appIconImageView.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
-            appIconImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            appIconImageView.widthAnchor.constraint(equalToConstant: 80),
-            appIconImageView.heightAnchor.constraint(equalToConstant: 80),
+            backButton.leadingAnchor.constraint(equalTo: navigationBar.leadingAnchor, constant: 4),
+            backButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: 44),
+            backButton.heightAnchor.constraint(equalToConstant: 44),
             
-            appNameLabel.topAnchor.constraint(equalTo: appIconImageView.bottomAnchor, constant: 12),
-            appNameLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
-            appNameLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
-            
-            appTaglineLabel.topAnchor.constraint(equalTo: appNameLabel.bottomAnchor, constant: 4),
-            appTaglineLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
-            appTaglineLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
+            titleLabel.leadingAnchor.constraint(equalTo: backButton.trailingAnchor, constant: 4),
+            titleLabel.bottomAnchor.constraint(equalTo: navigationBar.bottomAnchor, constant: -12),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: navigationBar.trailingAnchor, constant: -20),
         ])
         
         // Table Constraints
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            tableView.topAnchor.constraint(equalTo: navigationBar.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-        
-        // Back button styling
-        if #available(iOS 13.0, *) {
-            navigationController?.navigationBar.tintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
-        }
+    }
+    
+    @objc private func backButtonTapped() {
+        navigationController?.popViewController(animated: true)
     }
     
     // MARK: - Actions
@@ -317,9 +320,6 @@ extension SettingsVC: UITableViewDelegate, UITableViewDataSource {
         return sections[section].count
     }
     
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return SettingsSection(rawValue: section)?.title
-    }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "SettingsCell", for: indexPath) as? SettingsCell else {
@@ -327,23 +327,24 @@ extension SettingsVC: UITableViewDelegate, UITableViewDataSource {
         }
         
         let row = sections[indexPath.section][indexPath.row]
+        let isLastInSection = indexPath.row == sections[indexPath.section].count - 1
         
         // Configure cell
         cell.configure(
             icon: row.iconName,
             iconColor: row.iconColor,
             title: row.title,
-            subtitle: row.subtitle
+            subtitle: row.subtitle,
+            isLastInSection: isLastInSection
         )
         
-        // Show disclosure indicator for actionable items
-        switch row {
-        case .version:
-            cell.accessoryType = .none
-            cell.selectionStyle = .none
-        default:
-            cell.accessoryType = .disclosureIndicator
-            cell.selectionStyle = .default
+        // Version row is not actionable
+        if case .version = row {
+            cell.isUserInteractionEnabled = false
+            cell.alpha = 0.6
+        } else {
+            cell.isUserInteractionEnabled = true
+            cell.alpha = 1.0
         }
         
         return cell
@@ -351,6 +352,35 @@ extension SettingsVC: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 60
+    }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let headerView = UIView()
+        headerView.backgroundColor = .clear
+        
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = SettingsSection(rawValue: section)?.title.uppercased()
+        label.font = UIFont.systemFont(ofSize: 13, weight: .semibold)
+        if #available(iOS 13.0, *) {
+            label.textColor = .secondaryLabel
+        } else {
+            label.textColor = .gray
+        }
+        
+        headerView.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
+            label.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
+            label.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -8)
+        ])
+        
+        return headerView
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 40
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -572,6 +602,24 @@ extension SettingsVC: MFMailComposeViewControllerDelegate {
 
 class SettingsCell: UITableViewCell {
     
+    private let containerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .white
+        return view
+    }()
+    
+    private let separatorLine: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        if #available(iOS 13.0, *) {
+            view.backgroundColor = .separator
+        } else {
+            view.backgroundColor = UIColor(white: 0.9, alpha: 1.0)
+        }
+        return view
+    }()
+    
     private let iconContainerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -588,10 +636,19 @@ class SettingsCell: UITableViewCell {
         return imageView
     }()
     
+    private let textStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.spacing = 4
+        stack.alignment = .fill
+        return stack
+    }()
+    
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        label.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
         if #available(iOS 13.0, *) {
             label.textColor = .label
         } else {
@@ -607,9 +664,21 @@ class SettingsCell: UITableViewCell {
         if #available(iOS 13.0, *) {
             label.textColor = .secondaryLabel
         } else {
-            label.textColor = .gray
+            label.textColor = .lightGray
         }
         return label
+    }()
+    
+    private let chevronImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        if #available(iOS 13.0, *) {
+            let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+            imageView.image = UIImage(systemName: "chevron.right", withConfiguration: config)
+            imageView.tintColor = .tertiaryLabel
+        }
+        return imageView
     }()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -622,37 +691,58 @@ class SettingsCell: UITableViewCell {
     }
     
     private func setupViews() {
-        contentView.addSubview(iconContainerView)
+        backgroundColor = .white
+        contentView.backgroundColor = .white
+        selectionStyle = .none
+        
+        contentView.addSubview(containerView)
+        containerView.addSubview(iconContainerView)
         iconContainerView.addSubview(iconImageView)
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(subtitleLabel)
+        containerView.addSubview(textStackView)
+        textStackView.addArrangedSubview(titleLabel)
+        textStackView.addArrangedSubview(subtitleLabel)
+        containerView.addSubview(chevronImageView)
+        contentView.addSubview(separatorLine)
         
         NSLayoutConstraint.activate([
+            // Container view - full width
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            
             // Icon container
-            iconContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            iconContainerView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            iconContainerView.widthAnchor.constraint(equalToConstant: 36),
-            iconContainerView.heightAnchor.constraint(equalToConstant: 36),
+            iconContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            iconContainerView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            iconContainerView.widthAnchor.constraint(equalToConstant: 32),
+            iconContainerView.heightAnchor.constraint(equalToConstant: 32),
             
             // Icon
             iconImageView.centerXAnchor.constraint(equalTo: iconContainerView.centerXAnchor),
             iconImageView.centerYAnchor.constraint(equalTo: iconContainerView.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 20),
-            iconImageView.heightAnchor.constraint(equalToConstant: 20),
+            iconImageView.widthAnchor.constraint(equalToConstant: 18),
+            iconImageView.heightAnchor.constraint(equalToConstant: 18),
             
-            // Title
-            titleLabel.leadingAnchor.constraint(equalTo: iconContainerView.trailingAnchor, constant: 16),
-            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
+            // Text stack
+            textStackView.leadingAnchor.constraint(equalTo: iconContainerView.trailingAnchor, constant: 12),
+            textStackView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            textStackView.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -12),
             
-            // Subtitle
-            subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
-            subtitleLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            // Chevron
+            chevronImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            chevronImageView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            chevronImageView.widthAnchor.constraint(equalToConstant: 12),
+            chevronImageView.heightAnchor.constraint(equalToConstant: 12),
+            
+            // Separator line
+            separatorLine.leadingAnchor.constraint(equalTo: textStackView.leadingAnchor),
+            separatorLine.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            separatorLine.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            separatorLine.heightAnchor.constraint(equalToConstant: 0.5),
         ])
     }
     
-    func configure(icon: String, iconColor: UIColor, title: String, subtitle: String?) {
+    func configure(icon: String, iconColor: UIColor, title: String, subtitle: String?, isLastInSection: Bool) {
         if #available(iOS 13.0, *) {
             iconImageView.image = UIImage(systemName: icon)
         } else {
@@ -660,8 +750,23 @@ class SettingsCell: UITableViewCell {
         }
         iconContainerView.backgroundColor = iconColor
         titleLabel.text = title
-        subtitleLabel.text = subtitle
-        subtitleLabel.isHidden = subtitle == nil
+        
+        if let subtitle = subtitle {
+            subtitleLabel.text = subtitle
+            subtitleLabel.isHidden = false
+        } else {
+            subtitleLabel.isHidden = true
+        }
+        
+        // Hide separator for last cell in section
+        separatorLine.isHidden = isLastInSection
+    }
+    
+    override func setHighlighted(_ highlighted: Bool, animated: Bool) {
+        super.setHighlighted(highlighted, animated: animated)
+        
+        UIView.animate(withDuration: 0.15) {
+            self.containerView.backgroundColor = highlighted ? UIColor(white: 0.95, alpha: 1.0) : .white
+        }
     }
 }
-

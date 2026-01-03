@@ -50,14 +50,14 @@ class MainVC: UIViewController {
         let view = PastelView(frame: CGRect(x: 0, y: 0, width: self.view.bounds.width, height: 380))
         view.startPastelPoint = .bottomLeft
         view.endPastelPoint = .topRight
-        view.animationDuration = 2.6
+        view.animationDuration = 3.5
         
-        view.setColors([UIColor(red: 156/255, green: 39/255, blue: 176/255, alpha: 1.0),
-                        UIColor(red: 255/255, green: 64/255, blue: 129/255, alpha: 1.0),
-                        UIColor(red: 123/255, green: 31/255, blue: 162/255, alpha: 1.0),
-                        UIColor(red: 32/255, green: 76/255, blue: 255/255, alpha: 1.0),
-                        UIColor(red: 32/255, green: 158/255, blue: 255/255, alpha: 1.0),
-                        #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 1),#colorLiteral(red: 0.3568627451, green: 0.1411764706, blue: 0.4784313725, alpha: 1),#colorLiteral(red: 0.9882352941, green: 0.8901960784, blue: 0.5411764706, alpha: 1),#colorLiteral(red: 0.9529411765, green: 0.5058823529, blue: 0.5058823529, alpha: 1),#colorLiteral(red: 0.09411764706, green: 0.3058823529, blue: 0.4078431373, alpha: 1),#colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)])
+        view.setColors([UIColor(red: 99/255, green: 102/255, blue: 241/255, alpha: 1.0),
+                        UIColor(red: 168/255, green: 85/255, blue: 247/255, alpha: 1.0),
+                        UIColor(red: 236/255, green: 72/255, blue: 153/255, alpha: 1.0),
+                        UIColor(red: 251/255, green: 146/255, blue: 60/255, alpha: 1.0),
+                        #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1),
+                        UIColor(red: 14/255, green: 165/255, blue: 233/255, alpha: 1.0)])
         
         view.startAnimation()
         return view
@@ -120,42 +120,42 @@ class MainVC: UIViewController {
     lazy var currencyContainerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.95)
-        view.layer.cornerRadius = 12
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.98)
+        view.layer.cornerRadius = 16
         view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 2)
-        view.layer.shadowRadius = 4
-        view.layer.shadowOpacity = 0.1
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
+        view.layer.shadowRadius = 12
+        view.layer.shadowOpacity = 0.15
         return view
     }()
     
     lazy var fromLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "From:"
-        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
-        label.textColor = UIColor.darkGray
+        label.text = "FROM"
+        label.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = UIColor.systemGray
         return label
     }()
     
     lazy var toLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "To:"
-        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
-        label.textColor = UIColor.darkGray
+        label.text = "TO"
+        label.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = UIColor.systemGray
         return label
     }()
     
     lazy var fromCurrencyButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.backgroundColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 0.15)
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1.5
+        button.backgroundColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 0.12)
+        button.layer.cornerRadius = 10
+        button.layer.borderWidth = 2
         button.layer.borderColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
-        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        button.contentEdgeInsets = UIEdgeInsets(top: 10, left: 14, bottom: 10, right: 14)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .bold)
         button.setTitleColor(#colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1), for: .normal)
         button.addTarget(self, action: #selector(showSourceCurrencyPicker), for: .touchUpInside)
         
@@ -168,12 +168,12 @@ class MainVC: UIViewController {
     lazy var toCurrencyButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.backgroundColor = #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 0.15)
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1.5
+        button.backgroundColor = #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 0.12)
+        button.layer.cornerRadius = 10
+        button.layer.borderWidth = 2
         button.layer.borderColor = #colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 1)
-        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        button.contentEdgeInsets = UIEdgeInsets(top: 10, left: 14, bottom: 10, right: 14)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .bold)
         button.setTitleColor(#colorLiteral(red: 0.9411764706, green: 0.1843137255, blue: 0.7607843137, alpha: 1), for: .normal)
         button.addTarget(self, action: #selector(showDestinationCurrencyPicker), for: .touchUpInside)
         
@@ -187,8 +187,8 @@ class MainVC: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "→"
-        label.font = UIFont.systemFont(ofSize: 20, weight: .bold)
-        label.textColor = UIColor.gray
+        label.font = UIFont.systemFont(ofSize: 24, weight: .bold)
+        label.textColor = UIColor.systemGray2
         return label
     }()
     
@@ -530,34 +530,34 @@ class MainVC: UIViewController {
         firstContainerView.addSubview(tapToEditLabel)
         
         // Currency Container Constraints
-        currencyContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12).isActive = true
-        currencyContainerView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 16).isActive = true
-        currencyContainerView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -16).isActive = true
-        currencyContainerView.heightAnchor.constraint(equalToConstant: 70).isActive = true
+        currencyContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16).isActive = true
+        currencyContainerView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
+        currencyContainerView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
+        currencyContainerView.heightAnchor.constraint(equalToConstant: 80).isActive = true
         
         // From Label
-        fromLabel.topAnchor.constraint(equalTo: currencyContainerView.topAnchor, constant: 8).isActive = true
-        fromLabel.leftAnchor.constraint(equalTo: currencyContainerView.leftAnchor, constant: 12).isActive = true
+        fromLabel.topAnchor.constraint(equalTo: currencyContainerView.topAnchor, constant: 10).isActive = true
+        fromLabel.leftAnchor.constraint(equalTo: currencyContainerView.leftAnchor, constant: 16).isActive = true
         
         // From Currency Button
-        fromCurrencyButton.topAnchor.constraint(equalTo: fromLabel.bottomAnchor, constant: 4).isActive = true
-        fromCurrencyButton.leftAnchor.constraint(equalTo: currencyContainerView.leftAnchor, constant: 12).isActive = true
-        fromCurrencyButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-        fromCurrencyButton.widthAnchor.constraint(equalToConstant: 120).isActive = true
+        fromCurrencyButton.topAnchor.constraint(equalTo: fromLabel.bottomAnchor, constant: 6).isActive = true
+        fromCurrencyButton.leftAnchor.constraint(equalTo: currencyContainerView.leftAnchor, constant: 16).isActive = true
+        fromCurrencyButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        fromCurrencyButton.widthAnchor.constraint(equalToConstant: 130).isActive = true
         
         // Arrow Label
         arrowLabel.centerYAnchor.constraint(equalTo: fromCurrencyButton.centerYAnchor).isActive = true
         arrowLabel.centerXAnchor.constraint(equalTo: currencyContainerView.centerXAnchor).isActive = true
         
         // To Label
-        toLabel.topAnchor.constraint(equalTo: currencyContainerView.topAnchor, constant: 8).isActive = true
-        toLabel.rightAnchor.constraint(equalTo: currencyContainerView.rightAnchor, constant: -12).isActive = true
+        toLabel.topAnchor.constraint(equalTo: currencyContainerView.topAnchor, constant: 10).isActive = true
+        toLabel.rightAnchor.constraint(equalTo: currencyContainerView.rightAnchor, constant: -16).isActive = true
         
         // To Currency Button
-        toCurrencyButton.topAnchor.constraint(equalTo: toLabel.bottomAnchor, constant: 4).isActive = true
-        toCurrencyButton.rightAnchor.constraint(equalTo: currencyContainerView.rightAnchor, constant: -12).isActive = true
-        toCurrencyButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-        toCurrencyButton.widthAnchor.constraint(equalToConstant: 120).isActive = true
+        toCurrencyButton.topAnchor.constraint(equalTo: toLabel.bottomAnchor, constant: 6).isActive = true
+        toCurrencyButton.rightAnchor.constraint(equalTo: currencyContainerView.rightAnchor, constant: -16).isActive = true
+        toCurrencyButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        toCurrencyButton.widthAnchor.constraint(equalToConstant: 130).isActive = true
         
         priceLabel.leftAnchor.constraint(equalTo: firstContainerView.leftAnchor, constant: 8).isActive = true
         priceLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true
@@ -590,10 +590,10 @@ class MainVC: UIViewController {
         
         noDataLabel.heightAnchor.constraint(equalToConstant: 140).isActive = true
         
-        firstContainerView.topAnchor.constraint(equalTo: currencyContainerView.bottomAnchor, constant: 12).isActive = true
+        firstContainerView.topAnchor.constraint(equalTo: currencyContainerView.bottomAnchor, constant: 16).isActive = true
         firstContainerView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
         firstContainerView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
-        firstContainerView.heightAnchor.constraint(equalToConstant: 200).isActive = true
+        firstContainerView.heightAnchor.constraint(equalToConstant: 210).isActive = true
         
         
         mainTextField.topAnchor.constraint(equalTo: firstContainerView.topAnchor,constant: 50).isActive = true
@@ -605,7 +605,7 @@ class MainVC: UIViewController {
         tapToEditLabel.centerXAnchor.constraint(equalTo: mainTextField.centerXAnchor).isActive = true
         tapToEditLabel.bottomAnchor.constraint(equalTo: mainTextField.bottomAnchor, constant: 30).isActive = true
         
-        rateCollection.topAnchor.constraint(equalTo: firstContainerView.bottomAnchor,constant: 8).isActive = true
+        rateCollection.topAnchor.constraint(equalTo: firstContainerView.bottomAnchor,constant: 12).isActive = true
         rateCollection.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
         rateCollection.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
         rateCollection.bottomAnchor.constraint(equalTo: disclaimerLabel.topAnchor, constant: -8).isActive = true
