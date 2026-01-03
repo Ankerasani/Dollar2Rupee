@@ -9,8 +9,8 @@
 import Foundation
 import UIKit
 import Alamofire
-import SwiftSoup
 import SwiftyJSON
+import SafariServices
 
 extension MainVC {
     
@@ -72,88 +72,92 @@ extension MainVC {
     }
     
     public func updateForexRate() {
-        
-        let urlBased = ""
-        guard let url = URL(string: urlBased) else {return}
-        
-        Alamofire.request(url, method: .get)
-            .responseJSON { response in
-                if response.data != nil {
-                    do{
-                        let json = try JSONDecoder().decode(CurrencyData.self, from: response.data!)
-                        for (key, value) in json.rates {
-                            if key == "INR" {
-                                self.priceLabel.attributedText =  "  Forex: ^{$}\(value)  ".superscripted(font: UIFont.systemFont(ofSize: 18, weight: .medium))
-                            }
-                        }
-                    }
-                    catch{
-                        print(error)
-                    }
-                }
+        APIService.fetchForexRate { forexRate in
+            guard let rate = forexRate else {
+                print("❌ Failed to fetch forex rate")
+                return
             }
-        
+            
+            DispatchQueue.main.async {
+                self.priceLabel.attributedText = "  Forex: ^{$}\(String(format: "%.2f", rate))  ".superscripted(font: UIFont.systemFont(ofSize: 18, weight: .medium))
+            }
+        }
     }
     
     public func getRates(completion: @escaping (Result<[Rate]>) -> Void) {
-        
-        let urlBased = ""
-        guard let url = URL(string: urlBased) else {return}
-        
-        Alamofire.request(url).responseString { response in
-            if response.data != nil {
-                do {
-                    if let html = response.result.value {
-                        self.rates.removeAll()
-                        let document: Document = try SwiftSoup.parse(html)
-                        let forexRate: Elements = try document.select("forex_rate")
-                        
-                        var rateValue = ""
-                        if let rate = try? forexRate.select("forex_rate").text() {
-                            rateValue = rate
-                            self.priceLabel.attributedText =  "  Forex: ^{$}\(rate)  ".superscripted(font: UIFont.systemFont(ofSize: 18, weight: .medium))
-                        }
-                        
-                        let els: Elements = try document.select("bank");
-                        for element: Element in els.array() {
-                            if let name = try? element.select("name").text(),
-                               let rate = try? element.select("rate").text(), rate != "" {
-                                
-                                var updatedName = name.lowercased().replacingOccurrences(of: "(locked-in)", with: "")
-                                updatedName = updatedName.lowercased().replacingOccurrences(of: " ", with: "")
-                                updatedName = self.getRelativeText(text: updatedName)
-                                
-                                let today = Date()
-                                self.rates.append(Rate(currency: updatedName, rate: Double(rate) ?? 0, dateString: today.toString(dateFormat: "dd-MMM-yyyy"), forexRate: rateValue))
-                            }
-                        }
-                        
-                        self.removeUnwantedElements()
-                        self.rates = self.rates.sorted(by: { $0.rate > $1.rate })
-                        DispatchQueue.main.async {
-                            completion(.Success(self.rates))
-                        }
-                        
-                        self.rateCollection.reloadData()
-                    } }catch {
-                        if self.rates.count == 0 {
-                            //self.checkForAnotherRemittanceProviders()
-                        }
-                    }
-            }
-            if self.rates.count == 0 {
-                //self.checkForAnotherRemittanceProviders()
+        APIService.fetchRates { result in
+            switch result {
+            case .Success(let rates):
+                self.rates = rates
+                
+                // Filter unwanted elements
+                self.removeUnwantedElements()
+                
+                // Sort by rate (highest first)
+                self.rates = self.rates.sorted(by: { $0.rate > $1.rate })
+                
+                print("✅ Successfully processed \(self.rates.count) rates")
+                
+                // Update UI on main thread
+                DispatchQueue.main.async {
+                    self.rateCollection.reloadData()
+                    completion(.Success(self.rates))
+                }
+                
+            case .Error(let errorMessage):
+                print("❌ Error fetching rates: \(errorMessage)")
+                DispatchQueue.main.async {
+                    completion(.Error(errorMessage))
+                }
             }
         }
     }
     
     func openBrowser (urlString: String) {
-        let browserViewController = BrowserViewController()
-        browserViewController.title = urlString
-        browserViewController.URLToLoad = Constants.APPStoreURLs.valueByPropertyName(provider: urlString)
-        browserViewController.progressTintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
-        browserViewController.trackTintColor = UIColor.darkGray
-        navigationController?.pushViewController(browserViewController, animated: true)
+        // Get the provider URL
+        let providerURL = Constants.APPStoreURLs.valueByPropertyName(provider: urlString)
+        
+        // Check if URL is empty
+        guard !providerURL.isEmpty, let url = URL(string: providerURL) else {
+            // Show alert that provider link is not available
+            let alert = UIAlertController(
+                title: "Link Not Available",
+                message: "Sorry, we don't have a direct link for \(urlString) at this time. Please visit their website directly.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        
+        // Try to open the provider's app if installed (for deep links like "xoom://")
+        if url.scheme != "http" && url.scheme != "https" {
+            if UIApplication.shared.canOpenURL(url) {
+                // Open in the provider's installed app
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            } else {
+                // App not installed, show alert
+                let alert = UIAlertController(
+                    title: "App Not Installed",
+                    message: "\(urlString) app is not installed. Would you like to visit the App Store?",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                alert.addAction(UIAlertAction(title: "App Store", style: .default) { _ in
+                    // You'll need to add actual App Store URLs to your Constants
+                    if let appStoreURL = URL(string: providerURL) {
+                        UIApplication.shared.open(appStoreURL, options: [:])
+                    }
+                })
+                present(alert, animated: true)
+            }
+        } else {
+            // Open in Safari View Controller (in-app Safari with visible controls)
+            let safariVC = SFSafariViewController(url: url)
+            safariVC.preferredControlTintColor = #colorLiteral(red: 0.3411764706, green: 0.7921568627, blue: 0.5215686275, alpha: 1)
+            safariVC.dismissButtonStyle = .close
+            present(safariVC, animated: true, completion: nil)
+        }
     }
     
     func getAPPInstallationInformation (urlString: String) {

@@ -12,7 +12,7 @@ class RateCell: UICollectionViewCell {
     
     let remittanceImage = MainImageView(imageName: "")
 
-    let doneButton    = MainButton(text: " SEND ")
+    let doneButton    = MainButton(text: " VIEW OFFER ")
 
     let regularRate = MainLabel(text: "", textAligment: .left, numberOfLines: 1,color: UIColor.black, font: UIFont(name: .liteFont, size: 12))
     let currencyRate = MainLabel(text: "", textAligment: .left, numberOfLines: 1,color: #colorLiteral(red: 0.4192152619, green: 0.6452817321, blue: 0.2875428498, alpha: 1))

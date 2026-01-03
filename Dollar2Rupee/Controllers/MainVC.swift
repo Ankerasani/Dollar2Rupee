@@ -95,6 +95,17 @@ class MainVC: UIViewController {
     lazy var currentCurrencyForShape = MainLabel(text: "Unknown", textAligment: .center, numberOfLines: 1)
     lazy var noDataLabel = MainSmallLabel(text: "You are offline or there is no data to display", textAligment: .center, numberOfLines: 2, font: UIFont(name: .regularFont, size: 22),backgroundColor: #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.8433098592))
     
+    lazy var disclaimerLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "ℹ️ Dollar2Rupee is an independent comparison tool. We don't process transfers. Tap 'View Offer' to visit the provider's website."
+        label.font = UIFont(name: .liteFont, size: 11)
+        label.textColor = UIColor.darkGray.withAlphaComponent(0.7)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        return label
+    }()
+    
     lazy var mainTextField: UITextField = {
         let tf = UITextField()
         tf.translatesAutoresizingMaskIntoConstraints = false
@@ -140,6 +151,7 @@ class MainVC: UIViewController {
         
         view.addSubview(firstContainerView)
         view.addSubview(rateCollection)
+        view.addSubview(disclaimerLabel)
         rateCollection.addSubview(noDataLabel)
         firstContainerView.addSubview(priceLabel)
         firstContainerView.addSubview(historyButton)
@@ -185,8 +197,14 @@ class MainVC: UIViewController {
         rateCollection.topAnchor.constraint(equalTo: firstContainerView.bottomAnchor,constant: 8).isActive = true
         rateCollection.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
         rateCollection.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
-        rateCollection.bottomAnchor.constraint(equalTo: view.bottomAnchor,constant: 1).isActive = true
+        rateCollection.bottomAnchor.constraint(equalTo: disclaimerLabel.topAnchor, constant: -8).isActive = true
         rateCollection.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        
+        disclaimerLabel.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
+        disclaimerLabel.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
+        disclaimerLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8).isActive = true
+        disclaimerLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 30).isActive = true
+        
         historyButton.addTarget(self, action: #selector(showHistory), for: .touchUpInside)
         
     }
