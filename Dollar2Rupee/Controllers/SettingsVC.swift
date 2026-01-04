@@ -72,6 +72,7 @@ class SettingsVC: UIViewController {
     
     private enum SettingsSection: Int, CaseIterable {
         case notifications
+        case reminders
         case contact
         case app
         case legal
@@ -79,6 +80,7 @@ class SettingsVC: UIViewController {
         var title: String {
             switch self {
             case .notifications: return "Notifications"
+            case .reminders: return "Reminders"
             case .contact: return "Contact & Support"
             case .app: return "About"
             case .legal: return "Legal"
@@ -89,6 +91,7 @@ class SettingsVC: UIViewController {
     private enum SettingsRow {
         case dailySummary
         case manageAlerts
+        case transferReminders
         case email
         case twitter
         case website
@@ -101,6 +104,7 @@ class SettingsVC: UIViewController {
             switch self {
             case .dailySummary: return "Daily Rate Summary"
             case .manageAlerts: return "Manage Rate Alerts"
+            case .transferReminders: return "Transfer Reminders"
             case .email: return "Email Support"
             case .twitter: return "Follow on Twitter"
             case .website: return "Visit Website"
@@ -115,6 +119,7 @@ class SettingsVC: UIViewController {
             switch self {
             case .dailySummary: return "chart.bar.fill"
             case .manageAlerts: return "bell.fill"
+            case .transferReminders: return "calendar.badge.clock"
             case .email: return "envelope.fill"
             case .twitter: return "person.2.fill"
             case .website: return "globe"
@@ -129,6 +134,7 @@ class SettingsVC: UIViewController {
             switch self {
             case .dailySummary: return UIColor(red: 87/255, green: 202/255, blue: 133/255, alpha: 1.0)
             case .manageAlerts: return UIColor(red: 240/255, green: 47/255, blue: 194/255, alpha: 1.0)
+            case .transferReminders: return UIColor(red: 255/255, green: 149/255, blue: 0/255, alpha: 1.0)
             case .email: return UIColor(red: 99/255, green: 102/255, blue: 241/255, alpha: 1.0)
             case .twitter: return UIColor(red: 29/255, green: 161/255, blue: 242/255, alpha: 1.0)
             case .website: return UIColor(red: 251/255, green: 146/255, blue: 60/255, alpha: 1.0)
@@ -147,6 +153,9 @@ class SettingsVC: UIViewController {
             case .manageAlerts:
                 let count = RateAlertManager.shared.getAllAlerts().count
                 return count > 0 ? "\(count) active alert\(count > 1 ? "s" : "")" : "No active alerts"
+            case .transferReminders:
+                let enabled = UserDefaults.standard.bool(forKey: "transferRemindersEnabled")
+                return enabled ? "Enabled" : "Set recurring reminders"
             case .email: return "support@compareremit.com"
             case .twitter: return "@compareremit"
             case .website: return "compareremit.com"
@@ -158,6 +167,7 @@ class SettingsVC: UIViewController {
     
     private let sections: [[SettingsRow]] = [
         [.dailySummary, .manageAlerts],
+        [.transferReminders],
         [.email, .website, .twitter],
         [.version, .rateApp],
         [.privacyPolicy, .termsOfService]
@@ -233,6 +243,10 @@ class SettingsVC: UIViewController {
     }
     
     @objc private func backButtonTapped() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
         navigationController?.popViewController(animated: true)
     }
     
@@ -386,6 +400,10 @@ extension SettingsVC: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
         let row = sections[indexPath.section][indexPath.row]
         
         switch row {
@@ -393,6 +411,8 @@ extension SettingsVC: UITableViewDelegate, UITableViewDataSource {
             handleDailySummary()
         case .manageAlerts:
             handleManageAlerts()
+        case .transferReminders:
+            handleTransferReminders()
         case .email:
             handleEmailSupport()
         case .website:
@@ -588,6 +608,43 @@ extension SettingsVC {
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
+    
+    // MARK: - New Feature Handlers
+    
+    private func handleTransferReminders() {
+        let alert = UIAlertController(
+            title: "📅 Transfer Reminders",
+            message: "Set up recurring reminders for your regular transfers. Choose your reminder schedule:",
+            preferredStyle: .actionSheet
+        )
+        
+        let schedules = [
+            ("Weekly", "Every week"),
+            ("Bi-weekly", "Every 2 weeks"),
+            ("Monthly", "Every month"),
+            ("Custom", "Set custom schedule")
+        ]
+        
+        for (title, subtitle) in schedules {
+            alert.addAction(UIAlertAction(title: "\(title) - \(subtitle)", style: .default) { [weak self] _ in
+                UserDefaults.standard.set(true, forKey: "transferRemindersEnabled")
+                UserDefaults.standard.set(title, forKey: "transferReminderSchedule")
+                self?.tableView.reloadData()
+                self?.showSimpleAlert(
+                    title: "✅ Reminder Set!",
+                    message: "You'll receive \(title.lowercased()) reminders for your transfers."
+                )
+            })
+        }
+        
+        alert.addAction(UIAlertAction(title: "Disable Reminders", style: .destructive) { [weak self] _ in
+            UserDefaults.standard.set(false, forKey: "transferRemindersEnabled")
+            self?.tableView.reloadData()
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
 }
 
 // MARK: - MFMailComposeViewControllerDelegate
@@ -691,8 +748,8 @@ class SettingsCell: UITableViewCell {
     }
     
     private func setupViews() {
-        backgroundColor = .white
-        contentView.backgroundColor = .white
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
         selectionStyle = .none
         
         contentView.addSubview(containerView)

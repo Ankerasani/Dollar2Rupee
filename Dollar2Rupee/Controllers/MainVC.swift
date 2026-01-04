@@ -26,6 +26,24 @@ class MainVC: UIViewController {
     let historyButton = MainButton(text: "History  ", font: UIFont(name: .regularFont, size: 18), textColor: #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0), backGroundColor: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0))
     let rateAlertButton = MainButton(text: "🔔", font: UIFont.systemFont(ofSize: 22), textColor: #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0), backGroundColor: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0))
     
+    lazy var shareButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        
+        if #available(iOS 13.0, *) {
+            let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+            let image = UIImage(systemName: "square.and.arrow.up", withConfiguration: config)
+            button.setImage(image, for: .normal)
+            button.tintColor = .white
+        } else {
+            button.setTitle("📤", for: .normal)
+            button.titleLabel?.font = UIFont.systemFont(ofSize: 22)
+        }
+        
+        button.addTarget(self, action: #selector(shareRates), for: .touchUpInside)
+        return button
+    }()
+    
     lazy var settingsButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -67,8 +85,8 @@ class MainVC: UIViewController {
     lazy var backGroundView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.9)
-        view.clipsToBounds = true
+        view.backgroundColor = .clear
+        view.clipsToBounds = false
         view.layer.cornerRadius = 2
         return view
     }()
@@ -103,10 +121,12 @@ class MainVC: UIViewController {
         layout.minimumLineSpacing = 15
         view.translatesAutoresizingMaskIntoConstraints = false
         view.register(RateCell.self, forCellWithReuseIdentifier: cellId)
-        view.backgroundColor = UIColor(named: "background")?.withAlphaComponent(1)
+        view.backgroundColor = .clear
         view.isScrollEnabled = true
         return view
     }()
+
+    
     
     lazy var tapToEditLabel: UILabel = {
         let currency = CurrencyManager.shared.selectedCurrency
@@ -114,6 +134,55 @@ class MainVC: UIViewController {
         label.isUserInteractionEnabled = false  // Don't intercept touches - pass them through to text field
         return label
     }()
+    
+    // MARK: - Quick Amount Buttons
+    
+    lazy var quickAmountStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.spacing = 8
+        return stack
+    }()
+    
+    private func createAmountButton(amount: Int) -> UIButton {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        
+        let currency = CurrencyManager.shared.selectedCurrency
+        button.setTitle("\(currency.symbol)\(amount)", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .clear
+        button.layer.cornerRadius = 8
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.white.withAlphaComponent(0.6).cgColor
+        
+        button.tag = amount
+        button.addTarget(self, action: #selector(quickAmountTapped(_:)), for: .touchUpInside)
+        
+        return button
+    }
+    
+    @objc private func quickAmountTapped(_ sender: UIButton) {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        let amount = sender.tag
+        mainTextField.text = "\(amount)"
+        rateCollection.reloadData()
+        
+        // Visual feedback
+        UIView.animate(withDuration: 0.1, animations: {
+            sender.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+        }) { _ in
+            UIView.animate(withDuration: 0.1) {
+                sender.transform = .identity
+            }
+        }
+    }
     
     // MARK: - Side-by-Side Currency Selectors
     
@@ -452,10 +521,18 @@ class MainVC: UIViewController {
     // MARK: - Currency Picker Actions
     
     @objc func showSourceCurrencyPicker() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
         let alert = UIAlertController(title: "Select Source Currency", message: nil, preferredStyle: .actionSheet)
         
         for (index, currency) in Currency.allCurrencies.enumerated() {
             let action = UIAlertAction(title: "\(currency.flag) \(currency.name) (\(currency.code))", style: .default) { _ in
+                // Haptic feedback on selection
+                let selectionGenerator = UISelectionFeedbackGenerator()
+                selectionGenerator.selectionChanged()
+                
                 self.currencySegmentControl.selectedSegmentIndex = index
                 self.fromCurrencyButton.setTitle("\(currency.flag) \(currency.code) ▼", for: .normal)
                 self.currencyChanged(self.currencySegmentControl)
@@ -474,10 +551,18 @@ class MainVC: UIViewController {
     }
     
     @objc func showDestinationCurrencyPicker() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
         let alert = UIAlertController(title: "Select Destination Currency", message: nil, preferredStyle: .actionSheet)
         
         for (index, destination) in DestinationCurrency.allDestinations.enumerated() {
             let action = UIAlertAction(title: "\(destination.flag) \(destination.name) (\(destination.code))", style: .default) { _ in
+                // Haptic feedback on selection
+                let selectionGenerator = UISelectionFeedbackGenerator()
+                selectionGenerator.selectionChanged()
+                
                 self.destinationSegmentControl.selectedSegmentIndex = index
                 self.toCurrencyButton.setTitle("\(destination.flag) \(destination.code) ▼", for: .normal)
                 self.destinationChanged(self.destinationSegmentControl)
@@ -498,9 +583,18 @@ class MainVC: UIViewController {
     
     fileprivate func setupView(){
         
-        backGroundView.backgroundColor = UIColor.white
+        // Add background view first (at the back)
+        backGroundView.backgroundColor = .clear
         view.addSubview(backGroundView)
         backGroundView.insertSubview(gradientView, at: 0)
+        // Ensure gradient fills the background view
+        gradientView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            gradientView.topAnchor.constraint(equalTo: backGroundView.topAnchor),
+            gradientView.leadingAnchor.constraint(equalTo: backGroundView.leadingAnchor),
+            gradientView.trailingAnchor.constraint(equalTo: backGroundView.trailingAnchor),
+            gradientView.bottomAnchor.constraint(equalTo: backGroundView.bottomAnchor)
+        ])
         
         priceLabel.textColor = .white
         priceLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -510,24 +604,39 @@ class MainVC: UIViewController {
         
         historyButton.titleLabel?.textAlignment = .left
         
-        // Add new side-by-side currency selector
+        // Add all other views on top of background
+        view.addSubview(disclaimerLabel)
         view.addSubview(currencyContainerView)
+        view.addSubview(firstContainerView)
+        view.addSubview(rateCollection)
+        
+        // Add subviews to currency container
         currencyContainerView.addSubview(fromLabel)
         currencyContainerView.addSubview(fromCurrencyButton)
         currencyContainerView.addSubview(arrowLabel)
         currencyContainerView.addSubview(toLabel)
         currencyContainerView.addSubview(toCurrencyButton)
-        
-        view.addSubview(firstContainerView)
-        view.addSubview(rateCollection)
-        view.addSubview(disclaimerLabel)
         rateCollection.addSubview(noDataLabel)
         firstContainerView.addSubview(priceLabel)
+        firstContainerView.addSubview(shareButton)
         firstContainerView.addSubview(rateAlertButton)
         firstContainerView.addSubview(settingsButton)
         firstContainerView.addSubview(historyButton)
         firstContainerView.addSubview(mainTextField)
         firstContainerView.addSubview(tapToEditLabel)
+        firstContainerView.addSubview(quickAmountStackView)
+        
+        // Z-order safety: make sure background stays at back and containers are in front
+        view.sendSubview(toBack: backGroundView)
+        view.bringSubview(toFront: currencyContainerView)
+        view.bringSubview(toFront: firstContainerView)
+        
+        // Add quick amount buttons
+        let amounts = [100, 500, 1000, 2000, 5000]
+        for amount in amounts {
+            let button = createAmountButton(amount: amount)
+            quickAmountStackView.addArrangedSubview(button)
+        }
         
         // Currency Container Constraints
         currencyContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16).isActive = true
@@ -563,6 +672,11 @@ class MainVC: UIViewController {
         priceLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true
         priceLabel.topAnchor.constraint(equalTo: firstContainerView.topAnchor, constant: 8).isActive = true
         
+        shareButton.rightAnchor.constraint(equalTo: rateAlertButton.leftAnchor, constant: -8).isActive = true
+        shareButton.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        shareButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        shareButton.topAnchor.constraint(equalTo: firstContainerView.topAnchor, constant: 8).isActive = true
+        
         rateAlertButton.rightAnchor.constraint(equalTo: settingsButton.leftAnchor, constant: -8).isActive = true
         rateAlertButton.widthAnchor.constraint(equalToConstant: 40).isActive = true
         rateAlertButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
@@ -580,7 +694,7 @@ class MainVC: UIViewController {
         backGroundView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
         backGroundView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
         backGroundView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
-        backGroundView.bottomAnchor.constraint(equalTo: firstContainerView.bottomAnchor, constant: 20).isActive = true
+        backGroundView.bottomAnchor.constraint(equalTo: rateCollection.topAnchor, constant: 40).isActive = true
         
         noDataLabel.isHidden = true
         noDataLabel.centerXAnchor.constraint(equalTo: rateCollection.centerXAnchor, constant: 0).isActive = true
@@ -593,7 +707,7 @@ class MainVC: UIViewController {
         firstContainerView.topAnchor.constraint(equalTo: currencyContainerView.bottomAnchor, constant: 16).isActive = true
         firstContainerView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
         firstContainerView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
-        firstContainerView.heightAnchor.constraint(equalToConstant: 210).isActive = true
+        firstContainerView.heightAnchor.constraint(equalToConstant: 260).isActive = true
         
         
         mainTextField.topAnchor.constraint(equalTo: firstContainerView.topAnchor,constant: 50).isActive = true
@@ -603,9 +717,15 @@ class MainVC: UIViewController {
         
         tapToEditLabel.heightAnchor.constraint(equalToConstant: 24).isActive = true
         tapToEditLabel.centerXAnchor.constraint(equalTo: mainTextField.centerXAnchor).isActive = true
-        tapToEditLabel.bottomAnchor.constraint(equalTo: mainTextField.bottomAnchor, constant: 30).isActive = true
+        tapToEditLabel.bottomAnchor.constraint(equalTo: mainTextField.bottomAnchor, constant: 36).isActive = true
         
-        rateCollection.topAnchor.constraint(equalTo: firstContainerView.bottomAnchor,constant: 12).isActive = true
+        quickAmountStackView.topAnchor.constraint(equalTo: tapToEditLabel.bottomAnchor, constant: 16).isActive = true
+        quickAmountStackView.leftAnchor.constraint(equalTo: firstContainerView.leftAnchor, constant: 12).isActive = true
+        quickAmountStackView.rightAnchor.constraint(equalTo: firstContainerView.rightAnchor, constant: -12).isActive = true
+        quickAmountStackView.heightAnchor.constraint(equalToConstant: 36).isActive = true
+        
+        // Place rate list directly, overlapping slightly onto gradient
+        rateCollection.topAnchor.constraint(equalTo: firstContainerView.bottomAnchor, constant: -8).isActive = true
         rateCollection.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
         rateCollection.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
         rateCollection.bottomAnchor.constraint(equalTo: disclaimerLabel.topAnchor, constant: -8).isActive = true
@@ -622,23 +742,70 @@ class MainVC: UIViewController {
     }
     
     @objc fileprivate func showHistory() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
         let historyVC = HistoryViewController()
         let selectedCurrency = CurrencyManager.shared.selectedCurrency
         historyVC.sourceCurrency = selectedCurrency.code
         historyVC.remittanceObjects = CoreDataStack.getCoreDataObjects(forCurrency: selectedCurrency.code)
-        //  let navigationVC = UINavigationController(rootViewController: historyVC)
-        //  navigationVC.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
-        // navigationVC.navigationBar.backItem?.title = "Back"
-        //  present(navigationVC, animated: true, completion: nil)
         navigationController?.pushViewController(historyVC, animated: true)
     }
     
     @objc fileprivate func showSettings() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
         let settingsVC = SettingsVC()
         navigationController?.pushViewController(settingsVC, animated: true)
     }
     
+    @objc fileprivate func shareRates() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        let currency = CurrencyManager.shared.selectedCurrency
+        let amount = mainTextField.text ?? "1000"
+        let symbol = DestinationCurrency.symbol(for: currentDestinationCurrency)
+        
+        // Create share text
+        var shareText = "💱 Best Rates for \(currency.code) → \(currentDestinationCurrency)\n"
+        shareText += "Amount: \(currency.symbol)\(amount)\n\n"
+        
+        if rates.count > 0 {
+            shareText += "Top 5 Providers:\n"
+            let topRates = rates.prefix(5)
+            for (index, rate) in topRates.enumerated() {
+                let amountValue = Double(amount) ?? 1000
+                let receivedAmount = amountValue * rate.rate
+                shareText += "\(index + 1). \(rate.currency): \(symbol)\(String(format: "%.2f", receivedAmount)) (Rate: \(String(format: "%.4f", rate.rate)))\n"
+            }
+            shareText += "\n📊 Forex Rate: \(currency.symbol)\(forexRate.forexRate)\n"
+        } else {
+            shareText += "No rates available at the moment.\n"
+        }
+        
+        shareText += "\n🔗 Compare rates with Dollar2Rupee app"
+        
+        let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+        
+        // For iPad
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = shareButton
+            popover.sourceRect = shareButton.bounds
+        }
+        
+        present(activityVC, animated: true)
+    }
+    
     @objc fileprivate func showRateAlertDialog() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
         // Check notification permission first
         NotificationManager.shared.checkPermission { [weak self] granted in
             guard let self = self else { return }
@@ -878,6 +1045,12 @@ class MainVC: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(true)
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Keep the gradient sized to the background container after layout
+        gradientView.frame = backGroundView.bounds
     }
     
     @objc func updateViewLayout(){
